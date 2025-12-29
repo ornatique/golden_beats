@@ -17,7 +17,9 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
 <body>
+    <?php /* ?>
     <div id="app">
+        <?php  ?>
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container">
                 <a class="navbar-brand" href="{{ url('/') }}">
@@ -71,10 +73,11 @@
                 </div>
             </div>
         </nav>
-
+ <?php */ ?>
         <main class="py-4">
             @yield('content')
         </main>
     </div>
+     <?php ?>
 </body>
 </html>
