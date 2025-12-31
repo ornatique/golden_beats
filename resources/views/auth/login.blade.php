@@ -87,7 +87,7 @@
 <body class="hold-transition login-page">
   <div class="login-box">
     <div class="login-logo">
-      <a href="{{ url('/login') }}"><b>Golden</b>Beats</a>
+      <a href="{{ url('/login') }}"><b>Golden</b>Beads</a>
     </div>
     <!-- /.login-logo -->
     <div class="card">

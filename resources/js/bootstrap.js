@@ -1,5 +1,6 @@
 // resources/js/bootstrap.js
-
+import axios from 'axios';
+window.axios = axios;
 // Load Lodash
 window._ = require('lodash');
 

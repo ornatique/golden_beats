@@ -1,8 +1,7 @@
-import $ from 'jquery';
-window.$ = window.jQuery = $;
 
-// Bootstrap 4 (AdminLTE dependency)
+
+// Bootstrap
 import 'bootstrap';
 
-// AdminLTE 3
-import 'admin-lte/dist/js/adminlte.min.js';
+// AdminLTE
+import 'admin-lte/dist/js/adminlte';
