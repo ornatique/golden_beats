@@ -15,11 +15,21 @@
 
         <div class="mb-3">
             <label>Permissions</label><br>
+
+            <!-- Select All -->
+            <label class="fw-bold">
+                <input type="checkbox" id="select-all-permissions">
+                Select All
+            </label>
+            <hr>
+
             @foreach($permissions as $permission)
                 <label>
-                    <input type="checkbox" name="permissions[]"
-                        value="{{ $permission->name }}"
-                        {{ $role->hasPermissionTo($permission->name) ? 'checked' : '' }}>
+                    <input type="checkbox"
+                           class="permission-checkbox"
+                           name="permissions[]"
+                           value="{{ $permission->name }}"
+                           {{ $role->hasPermissionTo($permission->name) ? 'checked' : '' }}>
                     {{ $permission->name }}
                 </label><br>
             @endforeach
@@ -29,3 +39,26 @@
     </form>
 </div>
 @endsection
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const selectAll = document.getElementById('select-all-permissions');
+    const checkboxes = document.querySelectorAll('.permission-checkbox');
+
+    // On page load → auto check Select All if needed
+    selectAll.checked = [...checkboxes].every(cb => cb.checked);
+
+    // Select All click
+    selectAll.addEventListener('change', function () {
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    });
+
+    // Individual checkbox click
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function () {
+            selectAll.checked = [...checkboxes].every(c => c.checked);
+        });
+    });
+
+});
+</script>

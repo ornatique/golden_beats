@@ -35,7 +35,9 @@ Route::middleware(['auth'])
     Route::get('users/export/excel', [UserController::class, 'exportExcel'])
         ->middleware('permission:user-export')
         ->name('users.export.excel');
-
+    Route::post('check-email', [UserController::class, 'checkEmail'])
+    ->middleware('permission:user-export')
+        ->name('check.email');
     Route::resource('roles', RoleController::class);
     Route::resource('permissions', PermissionController::class);
 });

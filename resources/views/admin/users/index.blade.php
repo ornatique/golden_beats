@@ -8,8 +8,11 @@
     <a href="{{ route('admin.users.create') }}" class="btn btn-primary mb-2 ">
     Create User
 </a>
+</div>
 @endcan
+
 @can('user-export')
+<div class="float-right">
 <a href="{{ route('admin.users.export.excel') }}" class="btn btn-success float-right">
     Export Excel
 </a>
@@ -41,19 +44,11 @@ $(document).ready(function () {
        
         ajax: "{{ route('admin.users.data') }}",
         order: [[0, 'asc']],
-        dom: 'Blfrtip', // 👈 VERY IMPORTANT
-        buttons: [
-            {
-                extend: 'excel',
-                text: 'Export Excel',
-                className: 'btn btn-success'
-            }
-        ],
         columns: [
         { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
         { data: 'name', name: 'name' },
         { data: 'email', name: 'email' },
-        { data: 'role', name: 'role', orderable: false, searchable: false },
+        { data: 'role', name: 'role', orderable: true, searchable: true },
         { data: 'action', name: 'action', orderable: false, searchable: false },
     ],
     

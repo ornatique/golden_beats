@@ -53009,4 +53009,10 @@ a.text-muted:hover {
 .dark-mode .border-dark {
   border-color: #4b545c !important;
 }
+
+#toast-container.toast-center {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
 /*# sourceMappingURL=adminlte.css.map */
