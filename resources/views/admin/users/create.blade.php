@@ -1,15 +1,18 @@
 @extends('layouts.admin')
 
 @section('content')
+@php
+    $only = request('only'); // customer | user | null
+@endphp
 <section class="content">
     <div class="container-fluid">
 
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title">Create User</h3>
+                <h3 class="card-title"> Create  {{ $only === 'customer' ? 'Customer ' : 'User' }}</h3>
             </div>
 
-            <form id="createUserForm" method="POST" action="{{ route('admin.users.store') }}" enctype="multipart/form-data">
+            <form id="createUserForm" method="POST" action="{{ route('admin.users.store') }}" enctype="multipart/form-data" data-mode="{{ isset($user) ? 'edit' : 'create' }}">
                 @csrf
 
                 <div class="card-body">
@@ -70,8 +73,10 @@
                                 <label>Mobile Number <span class="text-danger">*</span></label>
                                 <input type="text" name="number"
                                     class="form-control"
-                                    placeholder="Mobile Number"
-                                    >
+                                    placeholder="Mobile Number" maxlength="12"
+                                    inputmode="numeric"
+                                    pattern="[0-9]*"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                             </div>
                         </div>
                         <!-- Role -->
@@ -95,7 +100,7 @@
                             <div class="form-group">
                                 <label>State <span class="text-danger">*</span></label>
                                  <div class="select2-blue">
-                                <select  name="states" id="stateSelect" class="form-control select2bs4" data-dropdown-css-class="select2-blue" style="width: 100%;">
+                                <select  name="state" id="stateSelect" class="form-control select2bs4" data-dropdown-css-class="select2-blue" style="width: 100%;">
                                     <option> Select State</option>
                                 </select>
                                 </div>
@@ -139,7 +144,7 @@
                                 </div>
                             </div>
                         </div>
-
+                        @if( $only  == "customer")
 
                         <div class="col-md-6">
                             <div class="form-group">
@@ -151,7 +156,7 @@
                                             multiple="multiple"
                                             data-placeholder="Select a category"
                                            data-dropdown-css-class="select2-blue" 
-                                            style="width: 100%;" name="category_ids">
+                                            style="width: 100%;" name="category_ids[]">
                                             <option value="all">Select All</option>
                                             <option value="1">Alabama</option>
                                             <option value="2">Alaska</option>
@@ -167,6 +172,7 @@
                             </div>
 
                         </div>
+                        @endif
                     </div>
 
                     <div class="card-footer text-right">

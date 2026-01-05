@@ -3,7 +3,7 @@ let validator;
 let emailExists = false;
 let emailTimer = null;
 let lastCheckedEmail = '';
-
+var usersTable = null;
 // multiple selected dropdown for categories
 $(document).ready(function () {
     $('.select2').select2({
@@ -135,7 +135,7 @@ $('#email').on('keyup change', function () {
     let form = $('#createUserForm');
     let validator = form.data('validator');
 
-    // ❌ do nothing if email didn't change
+    //  do nothing if email didn't change
     if (email === lastCheckedEmail) {
         return;
     }
@@ -178,7 +178,7 @@ $('#email').on('keyup change', function () {
     }, 500);
 });
 $(document).ready(function () {
-
+    let isEdit = $('#createUserForm').data('mode') === 'edit';
     $('#createUserForm').validate({
         rules: {
             name: {
@@ -190,11 +190,15 @@ $(document).ready(function () {
                 email: true
             },
             password: {
-                required: true,
+                required: function () {
+                    return !isEdit; // ✅ required only on create
+                },
                 minlength: 6
             },
             cpassword: {
-                required: true,
+                required: function () {
+                    return !isEdit; // ✅ required only on create
+                },
                 equalTo: '[name="password"]'
             },
             number: {
@@ -213,7 +217,9 @@ $(document).ready(function () {
                 required: true
             },
             category_ids: {
-                required: true
+                required: function () {
+                    return $('[name="role"]').val() === 'customer';
+                }
             },
             image: {
                 required: true,
