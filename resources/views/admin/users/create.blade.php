@@ -151,21 +151,20 @@
                                 <label>Categories</label>
                                   <div class="select2-blue">
                                     <div class="select2-blue">
-                                        <select id="categorySelect"
+                                       <select id="categorySelect"
                                             class="select2 form-control"
                                             multiple="multiple"
                                             data-placeholder="Select a category"
                                            data-dropdown-css-class="select2-blue" 
-                                            style="width: 100%;" name="category_ids[]">
-                                            <option value="all">Select All</option>
-                                            <option value="1">Alabama</option>
-                                            <option value="2">Alaska</option>
-                                            <option value="3">California</option>
-                                            <option value="4">Delaware</option>
-                                            <option value="5">Tennessee</option>
-                                            <option value="6">Texas</option>
-                                            <option value="7">Washington</option>
-                                        </select>
+                                            style="width: 100%;" name="category_ids[]"
+                                        class="form-control @error('category_id') is-invalid @enderror">
+                                    <option value="all">Select All</option>
+                                    @foreach($categories as $id => $name)
+                                        <option value="{{ $id }}" {{ old('category_id')==$id?'selected':'' }}>
+                                            {{ $name }}
+                                        </option>
+                                    @endforeach
+                                </select>
                                     </div>
                                 </div>
 

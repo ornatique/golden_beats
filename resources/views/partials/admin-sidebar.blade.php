@@ -137,11 +137,16 @@
 </li>
 @endcan
 
+@php
+    $productMenuOpen =
+        request()->routeIs('admin.categories.*') ||
+        request()->routeIs('admin.subcategories.*') ||
+        request()->routeIs('admin.products.*');
+@endphp
 
-  <li class="nav-item {{ $isCustomerMenu ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ $isCustomerMenu ? 'active' : '' }}">
-       <i class="nav-icon fas fa-boxes"></i>
-
+  <li class="nav-item {{ $productMenuOpen ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ $productMenuOpen ? 'active' : '' }}">
+        <i class="nav-icon fas fa-boxes"></i>
         <p>
             Product Management
             <i class="fas fa-angle-left right"></i>
@@ -149,30 +154,37 @@
     </a>
 
     <ul class="nav nav-treeview">
+
+        {{-- Category --}}
         <li class="nav-item">
             <a href="{{ route('admin.categories.index') }}"
-               class="nav-link">
+               class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
                 <i class="fas fa-tag nav-icon"></i>
                 <p>Category</p>
             </a>
         </li>
 
+        {{-- Sub Category --}}
         <li class="nav-item">
-            <a href="{{ route('admin.users.index', ['only' => 'customer', 'status' => 'inactive']) }}"
-               class="nav-link {{ request('only') === 'customer' && request('status') === 'inactive' ? 'active' : '' }}">
+            <a href="{{ route('admin.subcategories.index') }}"
+               class="nav-link {{ request()->routeIs('admin.subcategories.*') ? 'active' : '' }}">
                 <i class="fas fa-tags nav-icon"></i>
                 <p>Sub Category</p>
             </a>
         </li>
-         <li class="nav-item">
-            <a href="{{ route('admin.users.index', ['only' => 'customer', 'status' => 'inactive']) }}"
-               class="nav-link {{ request('only') === 'customer' && request('status') === 'inactive' ? 'active' : '' }}">
+
+        {{-- Product --}}
+        <li class="nav-item">
+            <a href="{{ route('admin.products.index') }}"
+               class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
                 <i class="fas fa-box-open nav-icon"></i>
                 <p>Product</p>
             </a>
         </li>
+
     </ul>
 </li>
+
       </ul>
     </nav>
     <!-- /.sidebar-menu -->

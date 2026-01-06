@@ -155,15 +155,34 @@
                         @if( $only  == "customer")
                         {{-- Categories --}}
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Categories</label>
-                                <select name="category_ids[]"
-                                        class="form-control select2"
-                                        multiple>
-                                    
-                                </select>
+                                <div class="form-group">
+                                    <label>Categories</label>
+
+                                    <div class="select2-blue">
+                                        <select id="categorySelect"
+                                                name="category_ids[]"
+                                                class="select2 form-control @error('category_ids') is-invalid @enderror"
+                                                multiple="multiple"
+                                                data-placeholder="Select categories"
+                                                data-dropdown-css-class="select2-blue"
+                                                style="width:100%;">
+
+                                            <option value="all">Select All</option>
+
+                                            @foreach($categories as $id => $name)
+                                                <option value="{{ $id }}"
+                                                    {{ in_array($id, old('category_ids', $selectedCategories)) ? 'selected' : '' }}>
+                                                    {{ $name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+
+                                        @error('category_ids')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                </div>
                             </div>
-                        </div>
                         @endif
                     </div>
 

@@ -206,7 +206,7 @@ let isEdit = $('#categoryForm').data('mode') === 'edit';
                   required: function () {
                 return !isEdit;   // ✅ ONLY REQUIRED ON CREATE
             },
-                extension: "jpg|jpeg|png|webp,gif"
+                extension: "jpg|jpeg|png|webp|gif"
             }
         },
 

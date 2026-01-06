@@ -11,6 +11,7 @@ use Illuminate\Container\Attributes\Log;
 use App\Exports\UsersExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\File;
+use App\Models\Category;
 class UserController extends Controller
 {
     public function index(Request $request)
@@ -161,7 +162,8 @@ class UserController extends Controller
     public function create()
     {
         $roles = Role::all();
-        return view('admin.users.create', compact('roles'));
+        $categories = Category::pluck('name','id');
+        return view('admin.users.create', compact('roles','categories'));
     }
 
     public function store(Request $request)
@@ -222,8 +224,10 @@ class UserController extends Controller
         if ($user->hasRole('admin') && !auth()->user()->hasRole('admin')) {
             abort(403, 'You are not allowed to edit admin user');
         }
+        $selectedCategories = json_decode($user->category_ids, true) ?? [];
         $roles = Role::all();
-        return view('admin.users.edit', compact('user', 'roles'));
+        $categories = Category::pluck('name','id');
+        return view('admin.users.edit', compact('user', 'roles','categories','selectedCategories'));
     }
 
     public function update(Request $request, User $user)
