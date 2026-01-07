@@ -146,7 +146,7 @@
                 </div>
 
                 <div class="card-footer text-right">
-                    <a href="{{ route('admin.products.index') }}" class="btn btn-info">Back</a>
+                    <a href="{{ route('admin.products.index') }}" class="btn btn-info"><i class="fas fa-arrow-left"></i> Back</a>
                     <button class="btn btn-primary">Save</button>
                 </div>
 

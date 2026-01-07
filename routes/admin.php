@@ -67,7 +67,23 @@ Route::middleware(['auth'])
         Route::get('products/{product}/qr-pdf', [ProductController::class, 'qrPdf'])
             ->name('products.qr.pdf');
 
+        // 🔥 AJAX
+        Route::get('get-subcategories_data/{category}', [ProductController::class, 'getSubcategories_data'])
+            ->name('get.subcategories_data');
 
+        // 🔥 BULK PDF
+        Route::post('products/bulk-pdf', [ProductController::class, 'bulkPdf'])
+            ->name('products.bulk.pdf');
+
+        // 🔥 BULK PDF details
+        Route::post('products-details/bulk-pdf', [ProductController::class, 'bulkPdfdetail'])
+            ->name('products-details.bulk.pdf');
+
+        Route::get(
+            'products/print/qrcode',
+            [App\Http\Controllers\Admin\ProductController::class, 'printQr']
+        )->name('products.print.qrcode');
+        
         Route::resource('products', ProductController::class);
         Route::resource('subcategories', SubcategoryController::class);
         Route::resource('categories', CategoryController::class);

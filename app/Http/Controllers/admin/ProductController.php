@@ -16,55 +16,65 @@ class ProductController extends Controller
 {
     public function index()
     {
-        return view('admin.products.index');
+        $categories = Category::orderBy('name')->pluck('name', 'id');
+
+        return view('admin.products.index', compact('categories'));
     }
 
-    public function data()
+    public function data(Request $request)
     {
-        $products = Product::with(['category', 'subcategory'])->latest();
+        $products = Product::with(['category', 'subcategory'])
+            ->when($request->category_id, fn($q) => $q->where('category_id', $request->category_id))
+            ->when($request->subcategory_id, fn($q) => $q->where('subcategory_id', $request->subcategory_id))
+            ->latest();
 
         return DataTables::of($products)
             ->addIndexColumn()
+
+            ->addColumn('checkbox', function ($p) {
+                return '<input type="checkbox" class="product-check" value="' . $p->id . '">';
+            })
+
             ->addColumn('qr', function ($p) {
                 return '
-                    <div style="display:flex; align-items:center; gap:24%;">
-                        
+                    <div style="display:flex;gap:15px;align-items:center">
                         <iframe src="' . route('admin.products.qr', $p->id) . '"
-                                width="70"
-                                height="70"
-                                style="border:none;"></iframe>
-
+                            width="70" height="70" style="border:none"></iframe>
                         <a href="' . route('admin.products.qr.pdf', $p->id) . '"
-                        target="_blank"
-                        class="btn btn-success btn-sm">
-                        QR
+                            target="_blank"
+                            class="btn btn-success btn-sm">
+                            QR
                         </a>
-
                     </div>
                 ';
             })
 
+            ->addColumn('category', fn($p) => $p->category->name ?? '-')
+            ->addColumn('subcategory', fn($p) => $p->subcategory->name ?? '-')
 
-
-            ->addColumn('category', fn($p) => $p->category->name)
-            ->addColumn('subcategory', fn($p) => $p->subcategory->name)
             ->addColumn('gallery', function ($p) {
                 if (!$p->gallery) return '-';
+
                 return collect($p->gallery)->map(
                     fn($img) =>
-                    '<img src="' . asset($img) . '" width="40" class="mr-1">'
+                    '<img src="' . asset($img) . '"
+             class="gallery-thumb rounded mr-1"
+             style="width:50px;height:50px;cursor:pointer;object-fit:cover"
+             data-images=\'' . json_encode($p->gallery) . '\'
+             data-index="0">'
                 )->implode('');
             })
+
+
+
             ->addColumn('action', function ($p) {
                 return '
-                    <a href="' . route('admin.products.edit', $p->id) . '" class="btn btn-sm btn-primary">Edit</a>
-                     <button class="btn btn-sm btn-danger"
-                        onclick="deleteProduct(' . $p->id . ')">
-                    Delete
-                </button>
+                    <a href="' . route('admin.products.edit', $p->id) . '" class="btn btn-primary btn-sm">Edit</a>
+                    <button class="btn btn-danger btn-sm" onclick="deleteProduct(' . $p->id . ')">Delete</button>
                 ';
             })
-            ->rawColumns(['qr', 'gallery', 'action'])
+
+            ->rawColumns(['checkbox', 'qr', 'gallery', 'action'])
             ->make(true);
     }
 
@@ -209,13 +219,15 @@ class ProductController extends Controller
         return response()->json($subcategories);
     }
 
+    public function getSubcategories_data(Category $category)
+    {
+        return $category->subcategories()->pluck('name', 'id');
+    }
     public function qrPreview(Product $product)
     {
 
         $data = json_encode([
-            'id'   => $product->id,
             'name' => $product->name,
-            'code' => $product->number,
         ]);
 
         $svg = QrCode::format('svg')
@@ -229,9 +241,7 @@ class ProductController extends Controller
     public function qrPdf(Product $product)
     {
         $qrData = json_encode([
-            'id'   => $product->id,
             'name' => $product->name,
-            'code' => $product->number,
         ]);
 
         // Generate SVG
@@ -246,5 +256,60 @@ class ProductController extends Controller
         ]);
 
         return $pdf->stream('product-qr-' . $product->id . '.pdf');
+    }
+
+    public function bulkPdf(Request $request)
+    {
+        $products = Product::with(['category', 'subcategory'])
+            ->when($request->product_ids, fn($q) => $q->whereIn('id', $request->product_ids))
+            ->when($request->category_id, fn($q) => $q->where('category_id', $request->category_id))
+            ->when($request->subcategory_id, fn($q) => $q->where('subcategory_id', $request->subcategory_id))
+            ->get();
+
+        $pdf = Pdf::loadView('admin.products.bulk-pdf', compact('products'));
+
+        return $pdf->download('products.pdf');
+    }
+
+     public function bulkPdfdetail(Request $request)
+    {
+        $products = Product::with(['category', 'subcategory'])
+            ->when($request->product_ids, fn($q) => $q->whereIn('id', $request->product_ids))
+            ->when($request->category_id, fn($q) => $q->where('category_id', $request->category_id))
+            ->when($request->subcategory_id, fn($q) => $q->where('subcategory_id', $request->subcategory_id))
+            ->get();
+
+        $pdf = Pdf::loadView('admin.products.bulk-details-pdf', compact('products'));
+
+        return $pdf->download('products.pdf');
+    }
+
+    public function printQr(Request $request)
+    {
+        if (!$request->product_ids) {
+            abort(404);
+        }
+        $ids = explode(',', $request->product_ids);
+
+        $products = Product::whereIn('id', $ids)->get();
+
+        $qrData = $products->map(function ($product) {
+            return [
+                'name' => $product->name,
+                'code' => $product->id,
+                'weight' => $product->weight,
+                'size' => $product->size,
+                'qr' => base64_encode(
+                    QrCode::format('svg')
+                        ->size(200)
+                        ->generate(route('admin.products.qr', $product->id))
+                )
+            ];
+        });
+
+        $pdf = Pdf::loadView('admin.products.multi-qrs', compact('qrData'))
+            ->setPaper('A4', 'portrait');
+
+        return $pdf->stream('product-qr.pdf'); // auto open print dialog
     }
 }

@@ -175,8 +175,8 @@
                     </div>
 
                     <div class="card-footer text-right">
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-info">
-                            <i class="fas fa-ban"></i> Cancel
+                        <a href="{{ route('admin.users.index',request()->query()) }}" class="btn btn-info">
+                            <i class="fas fa-arrow-left"></i> Back
                         </a>
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save"></i> Submit

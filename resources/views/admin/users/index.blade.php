@@ -1,6 +1,8 @@
 @extends('layouts.admin')
 
 @section('content')
+<div class="card">
+    <div class="card-header">
 @php
     $only = request('only'); // customer | user | null
 @endphp
@@ -15,14 +17,14 @@
 @endcan
 
 @can('user-export')
-<div class="float-right">
+<!-- <div class="float-right">
 <a href="{{ route('admin.users.export.excel') }}" class="btn btn-success float-right">
     Export Excel
-</a>
-</div>
+</a> -->
+
 @endcan
-
-
+   </div>
+<div class="card-body">
 <table class="table table-bordered" id="users-table">
     <thead>
         <tr>
@@ -40,6 +42,8 @@
         </tr>
     </thead>
 </table>
+    </div>
+</div>
 @endsection
 @push('scripts')
 
@@ -50,7 +54,19 @@ $(document).ready(function () {
     let usersTable = $('#users-table').DataTable({
         processing: true,
         serverSide: true,
-       
+        dom: '<"row mb-3"<"col-md-6"l><"col-md-6 text-end"B>>frtip',  
+        buttons: [
+            {
+               extend: 'excelHtml5',
+                text: 'Export Excel',
+                className: 'btn btn-primary',
+               title: '{{ $only === "customer" ? "Customer List" : "User List" }}',
+                exportOptions: {
+                    columns: [0,1,3,4,5,6,7,8] // ❗ exclude Action column
+                },
+                
+            },
+        ],
          ajax: {
             url: "{{ route('admin.users.data') }}",
             data: function (d) {

@@ -34,6 +34,9 @@ Route::group([
 });
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/.well-known/appspecific/com.chrome.devtools.json', function () {
+    return response()->json([], 200);
+});
 
 
 require __DIR__.'/admin.php';
