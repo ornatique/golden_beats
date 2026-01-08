@@ -30,7 +30,7 @@ class ProductController extends Controller
 
         return DataTables::of($products)
             ->addIndexColumn()
-
+            ->filterColumn('DT_RowIndex', function () {})
             ->addColumn('checkbox', function ($p) {
                 return '<input type="checkbox" class="product-check" value="' . $p->id . '">';
             })

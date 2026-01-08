@@ -7,7 +7,8 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Admin\ProductController;
-
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\CustomOrderController;
 
 
 Route::middleware(['auth'])
@@ -83,7 +84,38 @@ Route::middleware(['auth'])
             'products/print/qrcode',
             [App\Http\Controllers\Admin\ProductController::class, 'printQr']
         )->name('products.print.qrcode');
-        
+
+        Route::get('orders/data', [OrderController::class, 'getData'])
+            ->name('orders.data');
+
+        Route::get('orders/{order}/print', [OrderController::class, 'print'])
+            ->name('orders.print');
+
+        Route::get('orders/{order}/pdf', [OrderController::class, 'pdf'])
+            ->name('orders.pdf');
+
+        Route::post(
+            'orders/update-status',
+            [OrderController::class, 'updateStatus']
+        )->name('orders.update-status');
+        Route::delete('orders/{order}', [OrderController::class, 'destroy'])
+            ->name('orders.destroy');
+        // Resource routes
+        Route::resource('orders', OrderController::class)
+            ->only(['index', 'edit', 'update']);
+
+        Route::get(
+            'custom-orders/data',
+            [CustomOrderController::class, 'data']
+        )->name('custom-orders.data');
+
+        Route::get(
+            'custom-orders/{customOrder}/print',
+            [CustomOrderController::class, 'print']
+        )->name('custom-orders.print');
+
+        Route::resource('custom-orders', CustomOrderController::class)
+            ->except(['show', 'create', 'store']);
         Route::resource('products', ProductController::class);
         Route::resource('subcategories', SubcategoryController::class);
         Route::resource('categories', CategoryController::class);

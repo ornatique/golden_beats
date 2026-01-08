@@ -46,7 +46,7 @@
           <a href="#" class="nav-link 
         {{ request()->routeIs('admin.permissions.*', 'admin.roles.*') ? 'active' : '' }}">
 
-           <i class="nav-icon fas fa-user-shield"></i>
+            <i class="nav-icon fas fa-user-shield"></i>
             <p>
               Roles & Permission
               <i class="fas fa-angle-left right"></i>
@@ -57,7 +57,7 @@
             <li class="nav-item">
               <a href="{{ route('admin.permissions.index') }}"
                 class="nav-link {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
-               <i class="fas fa-users-cog nav-icon"></i>
+                <i class="fas fa-users-cog nav-icon"></i>
                 <p>Permission</p>
               </a>
             </li>
@@ -73,117 +73,155 @@
         </li>
         @endcan
 
-      @can('user-view')
-@php
-    $isUserMenu =
+        @can('user-view')
+        @php
+        $isUserMenu =
         request()->routeIs('admin.users.*') &&
         request('only') === 'user';
-@endphp
+        @endphp
 
-<li class="nav-item {{ $isUserMenu ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ $isUserMenu ? 'active' : '' }}">
-        <i class="nav-icon fas fa-user"></i>
-        <p>
-            Users
-            <i class="fas fa-angle-left right"></i>
-        </p>
-    </a>
+        <li class="nav-item {{ $isUserMenu ? 'menu-open' : '' }}">
+          <a href="#" class="nav-link {{ $isUserMenu ? 'active' : '' }}">
+            <i class="nav-icon fas fa-user"></i>
+            <p>
+              Users
+              <i class="fas fa-angle-left right"></i>
+            </p>
+          </a>
 
-    <ul class="nav nav-treeview">
-        <li class="nav-item">
-            <a href="{{ route('admin.users.index', ['only' => 'user']) }}"
-               class="nav-link {{ $isUserMenu ? 'active' : '' }}">
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{ route('admin.users.index', ['only' => 'user']) }}"
+                class="nav-link {{ $isUserMenu ? 'active' : '' }}">
                 <i class="far fa-circle nav-icon"></i>
                 <p>Users List</p>
-            </a>
+              </a>
+            </li>
+          </ul>
         </li>
-    </ul>
-</li>
-@endcan
+        @endcan
 
-       @can('customer-view')
-@php
-    $isCustomerMenu =
+        @can('customer-view')
+        @php
+        $isCustomerMenu =
         request()->routeIs('admin.users.*') &&
         request('only') === 'customer';
-@endphp
+        @endphp
 
-<li class="nav-item {{ $isCustomerMenu ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ $isCustomerMenu ? 'active' : '' }}">
-        <i class="nav-icon fas fa-user-tag"></i>
-        <p>
-            Customers
-            <i class="fas fa-angle-left right"></i>
-        </p>
-    </a>
+        <li class="nav-item {{ $isCustomerMenu ? 'menu-open' : '' }}">
+          <a href="#" class="nav-link {{ $isCustomerMenu ? 'active' : '' }}">
+            <i class="nav-icon fas fa-user-tag"></i>
+            <p>
+              Customers
+              <i class="fas fa-angle-left right"></i>
+            </p>
+          </a>
 
-    <ul class="nav nav-treeview">
-        <li class="nav-item">
-            <a href="{{ route('admin.users.index', ['only' => 'customer', 'status' => 'active']) }}"
-               class="nav-link {{ request('only') === 'customer' && request('status') === 'active' ? 'active' : '' }}">
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{ route('admin.users.index', ['only' => 'customer', 'status' => 'active']) }}"
+                class="nav-link {{ request('only') === 'customer' && request('status') === 'active' ? 'active' : '' }}">
                 <i class="far fa-circle nav-icon"></i>
                 <p>All Customer</p>
-            </a>
-        </li>
+              </a>
+            </li>
 
-        <li class="nav-item">
-            <a href="{{ route('admin.users.index', ['only' => 'customer', 'status' => 'inactive']) }}"
-               class="nav-link {{ request('only') === 'customer' && request('status') === 'inactive' ? 'active' : '' }}">
+            <li class="nav-item">
+              <a href="{{ route('admin.users.index', ['only' => 'customer', 'status' => 'inactive']) }}"
+                class="nav-link {{ request('only') === 'customer' && request('status') === 'inactive' ? 'active' : '' }}">
                 <i class="far fa-circle nav-icon"></i>
                 <p>New Customer</p>
-            </a>
+              </a>
+            </li>
+          </ul>
         </li>
-    </ul>
-</li>
-@endcan
+        @endcan
 
-@php
-    $productMenuOpen =
+        @php
+        $productMenuOpen =
         request()->routeIs('admin.categories.*') ||
         request()->routeIs('admin.subcategories.*') ||
         request()->routeIs('admin.products.*');
-@endphp
+        @endphp
 
-  <li class="nav-item {{ $productMenuOpen ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ $productMenuOpen ? 'active' : '' }}">
-        <i class="nav-icon fas fa-boxes"></i>
-        <p>
-            Product Management
-            <i class="fas fa-angle-left right"></i>
-        </p>
-    </a>
+        <li class="nav-item {{ $productMenuOpen ? 'menu-open' : '' }}">
+          <a href="#" class="nav-link {{ $productMenuOpen ? 'active' : '' }}">
+            <i class="nav-icon fas fa-boxes"></i>
+            <p>
+              Product Management
+              <i class="fas fa-angle-left right"></i>
+            </p>
+          </a>
 
-    <ul class="nav nav-treeview">
+          <ul class="nav nav-treeview">
 
-        {{-- Category --}}
-        <li class="nav-item">
-            <a href="{{ route('admin.categories.index') }}"
-               class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
+            {{-- Category --}}
+            <li class="nav-item">
+              <a href="{{ route('admin.categories.index') }}"
+                class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
                 <i class="fas fa-tag nav-icon"></i>
                 <p>Category</p>
-            </a>
-        </li>
+              </a>
+            </li>
 
-        {{-- Sub Category --}}
-        <li class="nav-item">
-            <a href="{{ route('admin.subcategories.index') }}"
-               class="nav-link {{ request()->routeIs('admin.subcategories.*') ? 'active' : '' }}">
+            {{-- Sub Category --}}
+            <li class="nav-item">
+              <a href="{{ route('admin.subcategories.index') }}"
+                class="nav-link {{ request()->routeIs('admin.subcategories.*') ? 'active' : '' }}">
                 <i class="fas fa-tags nav-icon"></i>
                 <p>Sub Category</p>
-            </a>
-        </li>
+              </a>
+            </li>
 
-        {{-- Product --}}
-        <li class="nav-item">
-            <a href="{{ route('admin.products.index') }}"
-               class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
+            {{-- Product --}}
+            <li class="nav-item">
+              <a href="{{ route('admin.products.index') }}"
+                class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
                 <i class="fas fa-box-open nav-icon"></i>
                 <p>Product</p>
-            </a>
-        </li>
+              </a>
+            </li>
 
-    </ul>
-</li>
+          </ul>
+        </li>
+        @php
+        $estimateMenuOpen =
+        request()->routeIs('admin.orders.*')||
+        request()->routeIs('admin.custom-orders.*') 
+       
+        @endphp
+
+        <li class="nav-item {{ $estimateMenuOpen ? 'menu-open' : '' }}">
+          <a href="#" class="nav-link {{ $estimateMenuOpen ? 'active' : '' }}">
+            <i class="nav-icon fas fa-file-invoice-dollar"></i>
+            <p>
+              Estimate Management
+              <i class="fas fa-angle-left right"></i>
+            </p>
+          </a>
+
+          <ul class="nav nav-treeview">
+
+            {{-- Order --}}
+            <li class="nav-item">
+              <a href="{{ route('admin.orders.index') }}"
+                class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
+                <i class="fas fa-shopping-cart nav-icon"></i>
+                <p>Orders</p>
+              </a>
+            </li>
+
+            {{-- Custom Order --}}
+            <li class="nav-item">
+              <a href="{{ route('admin.custom-orders.index') }}"
+                class="nav-link {{ request()->routeIs('admin.custom-orders.*') ? 'active' : '' }}">
+                <i class="fas fa-pencil-ruler nav-icon"></i>
+                <p>Custom Orders</p>
+              </a>
+            </li>
+
+          </ul>
+        </li>
 
       </ul>
     </nav>
