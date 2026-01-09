@@ -288,6 +288,65 @@ $(document).ready(function () {
 
 });
 
+//category to sub category select
+$(function () {
+
+    // CATEGORY → SUBCATEGORY
+    $('#category').on('change', function () {
+
+        let categoryId = $(this).val();
+        let url = $(this).data('subcategory-url');
+
+        $('#subcategory').html('<option>Loading...</option>');
+        $('#product').html('<option value="">Select Product</option>');
+
+        if (!categoryId) {
+            $('#subcategory').html('<option value="">Select Subcategory</option>');
+            return;
+        }
+
+        $.get(url + '/' + categoryId, function (data) {
+
+            let options = '<option value="">Select Subcategory</option>';
+
+            data.forEach(item => {
+                options += `<option value="${item.id}">${item.name}</option>`;
+            });
+
+            $('#subcategory').html(options);
+        });
+    });
+
+    // SUBCATEGORY → PRODUCT
+    $('#subcategory').on('change', function () {
+
+        let subcategoryId = $(this).val();
+        let url = $('#category').data('product-url');
+
+        $('#product').html('<option>Loading...</option>');
+
+        if (!subcategoryId) {
+            $('#product').html('<option value="">Select Product</option>');
+            return;
+        }
+
+        $.get(url + '/' + subcategoryId, function (data) {
+
+            let options = '<option value="">Select Product</option>';
+
+            data.forEach(item => {
+                options += `<option value="${item.id}">${item.name}</option>`;
+            });
+
+            $('#product').html(options);
+        });
+    });
+
+});
+
+
+
+
 const CSRF_TOKEN = "{{ csrf_token() }}";
 
 

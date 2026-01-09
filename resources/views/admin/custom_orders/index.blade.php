@@ -11,9 +11,8 @@
             <thead>
             <tr>
                 <th>#</th>
-                <th>User</th>
+                <th>Customer Nmae</th>
                 <th>Image</th>
-                <th>Description</th>
                 <th>Remarks</th>
                 <th>Status</th>
                 <th>Created</th>
@@ -33,9 +32,8 @@ $('#customOrdersTable').DataTable({
     ajax: "{{ route('admin.custom-orders.data') }}",
     columns: [
         { data: 'DT_RowIndex', orderable:false, searchable:false },
-        { data: 'user_name' },
+        { data: 'user_name', name: 'user_name' },
         { data: 'image', orderable:false, searchable:false },
-        { data: 'description' },
         { data: 'remarks' },
         { data: 'status', orderable:false },
         { data: 'created_at' },
@@ -55,5 +53,27 @@ function deleteOrder(id){
         }
     });
 }
+
+$(document).on('change', '.order-status', function () {
+
+    let status = $(this).val();
+    let id = $(this).data('id');
+
+    $.ajax({
+        url: "{{ url('admin/custom-orders') }}/" + id + "/status",
+        method: "POST",
+        data: {
+            _token: "{{ csrf_token() }}",
+            status: status
+        },
+        success: function (res) {
+            toastr.success(res.message);
+        },
+        error: function () {
+            toastr.error('Status update failed');
+        }
+    });
+});
 </script>
+
 @endpush

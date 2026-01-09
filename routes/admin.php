@@ -9,6 +9,10 @@ use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\CustomOrderController;
+use App\Http\Controllers\Admin\PopupBannerAdController;
+use App\Http\Controllers\Admin\BannerAdController;
+use App\Http\Controllers\Admin\SocialMediaController;
+
 
 
 Route::middleware(['auth'])
@@ -55,8 +59,9 @@ Route::middleware(['auth'])
         )->name('subcategories.data');
 
         Route::get('products/data', [ProductController::class, 'data'])->name('products.data');
+
         Route::get(
-            'get-subcategories/{category}',
+            'get-subcategories_product/{category}',
             [ProductController::class, 'getSubcategories']
         )->name('get.subcategories');
 
@@ -98,6 +103,7 @@ Route::middleware(['auth'])
             'orders/update-status',
             [OrderController::class, 'updateStatus']
         )->name('orders.update-status');
+
         Route::delete('orders/{order}', [OrderController::class, 'destroy'])
             ->name('orders.destroy');
         // Resource routes
@@ -114,8 +120,51 @@ Route::middleware(['auth'])
             [CustomOrderController::class, 'print']
         )->name('custom-orders.print');
 
+        Route::post(
+            'custom-orders/{customOrder}/status',
+            [CustomOrderController::class, 'updateStatus']
+        )->name('custom-orders.status');
+
         Route::resource('custom-orders', CustomOrderController::class)
             ->except(['show', 'create', 'store']);
+
+        Route::get(
+            'popup-banner-ads/data',
+            [PopupBannerAdController::class, 'data']
+        )->name('popup-banner-ads.data');
+
+        Route::resource(
+            'popup-banner-ads',
+            PopupBannerAdController::class
+        )->only(['index', 'edit', 'update']);
+        Route::get(
+            'banner-ads/data',
+            [BannerAdController::class, 'data']
+        )->name('banner-ads.data');
+
+        Route::get(
+            'get-subcategories/{category}',
+            [BannerAdController::class, 'getSubcategories']
+        )->name('get-subcategories');
+
+        Route::get(
+            'get-products/{subcategory}',
+            [BannerAdController::class, 'getProducts']
+        )->name('get-products');
+
+        Route::delete(
+            'banner-ads/{bannerAd}',
+            [BannerAdController::class, 'destroy']
+        )->name('admin.banner-ads.destroy');
+
+                Route::get('social-media', [SocialMediaController::class, 'index'])
+            ->name('social-media.index');
+
+        Route::post('social-media', [SocialMediaController::class, 'update'])
+            ->name('social-media.update');
+
+        Route::resource('banner-ads', BannerAdController::class)
+            ->except(['show', 'destroy']);
         Route::resource('products', ProductController::class);
         Route::resource('subcategories', SubcategoryController::class);
         Route::resource('categories', CategoryController::class);

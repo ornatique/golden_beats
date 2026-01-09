@@ -187,8 +187,8 @@
         @php
         $estimateMenuOpen =
         request()->routeIs('admin.orders.*')||
-        request()->routeIs('admin.custom-orders.*') 
-       
+        request()->routeIs('admin.custom-orders.*')
+
         @endphp
 
         <li class="nav-item {{ $estimateMenuOpen ? 'menu-open' : '' }}">
@@ -217,6 +217,58 @@
                 class="nav-link {{ request()->routeIs('admin.custom-orders.*') ? 'active' : '' }}">
                 <i class="fas fa-pencil-ruler nav-icon"></i>
                 <p>Custom Orders</p>
+              </a>
+            </li>
+
+          </ul>
+        </li>
+
+        @php
+
+
+        // Marketing Management
+        $marketingMenuOpen =
+        request()->routeIs('admin.banner-ads.*') ||
+        request()->routeIs('admin.popup-banner-ads.*') ||
+        request()->routeIs('admin.social-media.*');
+        @endphp
+
+
+        <li class="nav-item {{ $marketingMenuOpen ? 'menu-open' : '' }}">
+          <a href="#" class="nav-link {{ $marketingMenuOpen ? 'active' : '' }}">
+            <i class="nav-icon fas fa-bullhorn"></i>
+            <p>
+              Marketing
+              <i class="fas fa-angle-left right"></i>
+            </p>
+          </a>
+
+          <ul class="nav nav-treeview">
+
+            {{-- Banner Ads --}}
+            <li class="nav-item">
+              <a href="{{ route('admin.banner-ads.index') }}"
+                class="nav-link {{ request()->routeIs('admin.banner-ads.*') ? 'active' : '' }}">
+                <i class="fas fa-image nav-icon"></i>
+                <p>Banner Ads</p>
+              </a>
+            </li>
+
+            {{-- Popup Banner Ads --}}
+            <li class="nav-item">
+              <a href="{{ route('admin.popup-banner-ads.index') }}"
+                class="nav-link {{ request()->routeIs('admin.popup-banner-ads.*') ? 'active' : '' }}">
+                <i class="fas fa-ad nav-icon"></i>
+                <p>Popup Banner Ads</p>
+              </a>
+            </li>
+
+            {{-- Social Media --}}
+            <li class="nav-item">
+              <a href="{{ route('admin.social-media.index') }}"
+                class="nav-link {{ request()->routeIs('admin.social-media.*') ? 'active' : '' }}">
+                <i class="nav-icon fab fa-facebook"></i>
+                <p>Social Media</p>
               </a>
             </li>
 
