@@ -39,7 +39,7 @@
             </p>
           </a>
         </li>
-        @can('role_perm_sidebar')
+        
         <li class="nav-item 
         {{ request()->routeIs('admin.permissions.*', 'admin.roles.*') ? 'menu-open' : '' }}">
 
@@ -71,7 +71,7 @@
             </li>
           </ul>
         </li>
-        @endcan
+   
 
         @can('user-view')
         @php
@@ -230,7 +230,8 @@
         $marketingMenuOpen =
         request()->routeIs('admin.banner-ads.*') ||
         request()->routeIs('admin.popup-banner-ads.*') ||
-        request()->routeIs('admin.social-media.*');
+        request()->routeIs('admin.social-media.*')||
+        request()->routeIs('admin.reels.*');
         @endphp
 
 
@@ -269,6 +270,14 @@
                 class="nav-link {{ request()->routeIs('admin.social-media.*') ? 'active' : '' }}">
                 <i class="nav-icon fab fa-facebook"></i>
                 <p>Social Media</p>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a href="{{ route('admin.reels.index') }}"
+                class="nav-link {{ request()->routeIs('admin.reels.*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-video"></i> 
+                <p>Media Reels</p>
               </a>
             </li>
 

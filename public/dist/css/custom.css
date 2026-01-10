@@ -93,6 +93,27 @@ span.select2-selection.select2-selection--single {
     border-color: #0d6efd !important;
     color: #fff !important;
 }
+.reel-media-wrap {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.reel-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.reel-video {
+    width: 100px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
 
 
 
