@@ -62,17 +62,44 @@ class CustomOrderController extends Controller
                 return Carbon::parse($o->created_at)->format('d M Y h:i A');
             })
             ->addColumn('action', function ($o) {
-                return '
-                <a href="' . route('admin.custom-orders.edit', $o->id) . '"
-                   class="btn btn-primary btn-sm">Edit</a>
 
-                <a href="' . route('admin.custom-orders.print', $o->id) . '"
-                   class="btn btn-success btn-sm" target="_blank">Print</a>
+                $html = '';
 
-                <button class="btn btn-danger btn-sm"
-                    onclick="deleteOrder(' . $o->id . ')">Delete</button>
-            ';
+                // ✏️ EDIT
+                if (auth()->user()->can('custom-order-edit')) {
+                    $html .= '
+            <a href="' . route('admin.custom-orders.edit', $o->id) . '"
+               class="btn btn-primary btn-sm mr-1">
+                Edit
+            </a>
+        ';
+                }
+
+                // 🖨 PRINT
+                if (auth()->user()->can('custom-order-print')) {
+                    $html .= '
+            <a href="' . route('admin.custom-orders.print', $o->id) . '"
+               class="btn btn-success btn-sm mr-1"
+               target="_blank">
+                Print
+            </a>
+        ';
+                }
+
+                // 🗑 DELETE
+                if (auth()->user()->can('custom-order-delete')) {
+                    $html .= '
+            <button class="btn btn-danger btn-sm"
+                onclick="deleteOrder(' . $o->id . ')">
+                Delete
+            </button>
+        ';
+                }
+
+                return $html ?: '-';
             })
+            ->rawColumns(['action'])
+
 
             ->rawColumns(['image', 'status', 'action'])
             ->make(true);

@@ -2,24 +2,26 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header text-right">
-        <h3 class="card-title">Reels</h3>
+    <div class="card-header ">
+        <h3>Reels</h3>
+        @can('reel-create')
         <a href="{{ route('admin.reels.create') }}"
-           class="btn btn-success">Add Reel</a>
+            class="btn btn-primary float-right">Add Reel</a>
+        @endcan
     </div>
 
     <div class="card-body">
         <table class="table table-bordered" id="reelsTable">
             <thead>
-            <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Media</th>
-                <th>Category</th>
-                <th>Subcategory</th>
-                <th>Likes & Comments</th>
-                <th>Action</th>
-            </tr>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Media</th>
+                    <th>Category</th>
+                    <th>Subcategory</th>
+                    <th>Likes & Comments</th>
+                    <th>Action</th>
+                </tr>
             </thead>
         </table>
     </div>
@@ -56,49 +58,70 @@
 @push('scripts')
 <script>
     function formatDateTime(dateStr) {
-    if (!dateStr) return '-';
+        if (!dateStr) return '-';
 
-    const d = new Date(dateStr);
+        const d = new Date(dateStr);
 
-    return d.toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
+        return d.toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
+
+    $(function() {
+        $('#reelsTable').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: "{{ route('admin.reels.data') }}",
+            columns: [{
+                    data: 'DT_RowIndex',
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    data: 'name'
+                },
+                {
+                    data: 'media',
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    data: 'category'
+                },
+                {
+                    data: 'subcategory'
+                },
+                {
+                    data: 'stats',
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    data: 'action',
+                    orderable: false,
+                    searchable: false
+                }
+            ]
+        });
     });
-}
-
-$(function () {
-    $('#reelsTable').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: "{{ route('admin.reels.data') }}",
-        columns: [
-            {data:'DT_RowIndex', orderable:false, searchable:false},
-            {data:'name'},
-            {data:'media', orderable:false, searchable:false},
-            {data:'category'},
-            {data:'subcategory'},
-            {data:'stats', orderable:false, searchable:false},
-            {data:'action', orderable:false, searchable:false}
-        ]
-    });
-});
 </script>
 <script>
-function openComments(reelId) {
+    function openComments(reelId) {
 
-    $('#commentsBody').html('<tr><td colspan="3">Loading...</td></tr>');
-    $('#commentsModal').modal('show');
+        $('#commentsBody').html('<tr><td colspan="3">Loading...</td></tr>');
+        $('#commentsModal').modal('show');
 
-    $.get("{{ url('admin/reels') }}/" + reelId + "/comments", function (comments) {
+        $.get("{{ url('admin/reels') }}/" + reelId + "/comments", function(comments) {
 
-        let html = '';
+            let html = '';
 
-        comments.forEach(c => {
-            html += `
+            comments.forEach(c => {
+                html += `
                 <tr data-id="${c.id}">
                     <td>${c.user?.name ?? 'User'}</td>
                     <td>
@@ -120,55 +143,55 @@ function openComments(reelId) {
                     </td>
                 </tr>
             `;
+            });
+
+            $('#commentsBody').html(html);
         });
-
-        $('#commentsBody').html(html);
-    });
-}
-
-function updateComment(commentId, btn) {
-
-    const row = $(btn).closest('tr');
-    const comment = row.find('.comment-input').val();
-
-    if (!comment.trim()) {
-        alert('Comment cannot be empty');
-        return;
     }
 
-    $.ajax({
-        url: "{{ url('admin/reel-comments') }}/" + commentId,
-        type: "PUT",
-        data: {
-            _token: "{{ csrf_token() }}",
-            comment: comment
-        },
-        success: function (response) {
-            alert('Comment updated successfully');
-            $('#commentsModal').modal('hide'); // ✅ now correctly placed
-        },
-        error: function () {
-            alert('Failed to update comment');
+    function updateComment(commentId, btn) {
+
+        const row = $(btn).closest('tr');
+        const comment = row.find('.comment-input').val();
+
+        if (!comment.trim()) {
+            alert('Comment cannot be empty');
+            return;
         }
-    });
-}
+
+        $.ajax({
+            url: "{{ url('admin/reel-comments') }}/" + commentId,
+            type: "PUT",
+            data: {
+                _token: "{{ csrf_token() }}",
+                comment: comment
+            },
+            success: function(response) {
+                alert('Comment updated successfully');
+                $('#commentsModal').modal('hide'); // ✅ now correctly placed
+            },
+            error: function() {
+                alert('Failed to update comment');
+            }
+        });
+    }
 
 
-function deleteComment(commentId, btn) {
+    function deleteComment(commentId, btn) {
 
-    if (!confirm('Delete comment?')) return;
+        if (!confirm('Delete comment?')) return;
 
-    $.ajax({
-        url: "{{ url('admin/reel-comments') }}/" + commentId,
-        method: "DELETE",
-        data: {
-            _token: "{{ csrf_token() }}"
-        },
-        success: () => {
-            $(btn).closest('tr').remove();
-        }
-    });
-}
+        $.ajax({
+            url: "{{ url('admin/reel-comments') }}/" + commentId,
+            method: "DELETE",
+            data: {
+                _token: "{{ csrf_token() }}"
+            },
+            success: () => {
+                $(btn).closest('tr').remove();
+            }
+        });
+    }
 </script>
 
 @endpush

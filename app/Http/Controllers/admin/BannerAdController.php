@@ -49,18 +49,33 @@ class BannerAdController extends Controller
 
             // ACTIONS
             ->addColumn('action', function ($ad) {
-                return '
-                <a href="' . route('admin.banner-ads.edit', $ad->id) . '"
-                   class="btn btn-primary btn-sm">
-                   Edit
-                </a>
 
-                <button class="btn btn-danger btn-sm ml-1"
-                        onclick="deleteBannerAd(' . $ad->id . ')">
-                   Delete
-                </button>
-            ';
+                $html = '';
+
+                // ✏️ EDIT (banner-ad-edit)
+                if (auth()->user()->can('banner-ad-edit')) {
+                                $html .= '
+                        <a href="' . route('admin.banner-ads.edit', $ad->id) . '"
+                        class="btn btn-primary btn-sm mr-1">
+                        Edit
+                        </a>
+                    ';
+                            }
+
+                            // 🗑 DELETE (banner-ad-delete)
+                            if (auth()->user()->can('banner-ad-delete')) {
+                                $html .= '
+                        <button class="btn btn-danger btn-sm"
+                                onclick="deleteBannerAd(' . $ad->id . ')">
+                        Delete
+                        </button>
+                    ';
+                }
+
+                return $html ?: '-';
             })
+            ->rawColumns(['action'])
+
 
             ->rawColumns(['image', 'action'])
             ->make(true);

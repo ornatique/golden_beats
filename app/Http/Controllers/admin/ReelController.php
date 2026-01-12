@@ -69,24 +69,48 @@ class ReelController extends Controller
             })
 
             ->addColumn('action', function ($r) {
-                return '
-                    <button class="btn btn-info btn-sm"
-                        onclick="openComments(' . $r->id . ')">
-                        💬 Comments (' . $r->comments_total . ')
-                    </button>
-                <a href="' . route('admin.reels.edit', $r->id) . '"
-                   class="btn btn-primary btn-sm">Edit</a>
 
-                <form action="' . route('admin.reels.destroy', $r->id) . '"
-                      method="POST" style="display:inline">
-                    ' . csrf_field() . method_field('DELETE') . '
-                    <button class="btn btn-danger btn-sm"
-                        onclick="return confirm(\'Delete reel?\')">
-                        Delete
-                    </button>
-                </form>
-            ';
+                $html = '';
+
+                // 💬 VIEW COMMENTS (reel-view)
+                if (auth()->user()->can('view-comment')) {
+                    $html .= '
+            <button class="btn btn-info btn-sm mr-1"
+                onclick="openComments(' . $r->id . ')">
+                💬 Comments (' . $r->comments_total . ')
+            </button>
+        ';
+                }
+
+                // ✏️ EDIT REEL (reel-edit)
+                if (auth()->user()->can('reel-edit')) {
+                    $html .= '
+            <a href="' . route('admin.reels.edit', $r->id) . '"
+               class="btn btn-primary btn-sm mr-1">
+                Edit
+            </a>
+        ';
+                }
+
+                // 🗑 DELETE REEL (reel-delete)
+                if (auth()->user()->can('reel-delete')) {
+                    $html .= '
+            <form action="' . route('admin.reels.destroy', $r->id) . '"
+                  method="POST"
+                  style="display:inline-block"
+                  onsubmit="return confirm(\'Delete reel?\')">
+                ' . csrf_field() . method_field('DELETE') . '
+                <button class="btn btn-danger btn-sm">
+                    Delete
+                </button>
+            </form>
+        ';
+                }
+
+                return $html ?: '-';
             })
+            ->rawColumns(['action'])
+
 
             ->rawColumns(['media', 'stats', 'action'])
             ->make(true);

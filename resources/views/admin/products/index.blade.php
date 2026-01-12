@@ -2,9 +2,12 @@
 
 @section('content')
 <div class="card">
+
     <div class="card-header">
         <h3>List Products</h3>
+        @can('product-create')
         <a href="{{ route('admin.products.create') }}" class="btn btn-primary float-right">Add Product</a>
+        @endcan
     </div>
 
     <div class="card-body">
@@ -25,15 +28,21 @@
             </div>
 
             <div class="col-md-6 text-right">
+                @can('product-pdf-with-details')
                 <button class="btn btn-success" id="printSelectedwithdetails">
                     Download PDF With Details
                 </button>
+                @endcan
+                @can('product-pdf-download')
                 <button class="btn btn-success" id="printSelected">
                     Download PDF
                 </button>
+                @endcan
+                @can('product-print-code')
                 <button class="btn btn-success" onclick="printQrPdf()">
                     Print Selected QR
                 </button>
+                @endcan
             </div>
         </div>
         <table class="table table-bordered" id="productTable">
@@ -184,8 +193,8 @@
             .appendTo('body')
             .submit();
     });
-// bulk pdf with details
-     $('#printSelectedwithdetails').click(function() {
+    // bulk pdf with details
+    $('#printSelectedwithdetails').click(function() {
         let ids = $('.product-check:checked').map(function() {
             return this.value
         }).get();
@@ -260,7 +269,7 @@
             win.print(); // 🔥 auto print
         };
     }
-// list of product view gallary on popup
+    // list of product view gallary on popup
     let images = [];
     let currentIndex = 0;
 

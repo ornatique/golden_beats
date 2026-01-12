@@ -1,21 +1,3 @@
-<!-- <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <a href="{{ url('/admin/dashboard') }}" class="brand-link">
-        <span class="brand-text font-weight-light">{{ config('app.name') }}</span>
-    </a>
-    <div class="sidebar">
-        <nav class="mt-2">
-            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview">
-                <li class="nav-item">
-                    <a href="{{ route('admin.dashboard') }}" class="nav-link">
-                        <i class="nav-icon fas fa-tachometer-alt"></i>
-                        <p>Dashboard</p>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </div>
-</aside> -->
-
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
   <!-- Brand Logo -->
   <a href="{{ url('/admin/dashboard') }}" class="brand-link">
@@ -39,7 +21,7 @@
             </p>
           </a>
         </li>
-        
+
         <li class="nav-item 
         {{ request()->routeIs('admin.permissions.*', 'admin.roles.*') ? 'menu-open' : '' }}">
 
@@ -71,7 +53,7 @@
             </li>
           </ul>
         </li>
-   
+
 
         @can('user-view')
         @php
@@ -156,6 +138,7 @@
           <ul class="nav nav-treeview">
 
             {{-- Category --}}
+            @can('category-view')
             <li class="nav-item">
               <a href="{{ route('admin.categories.index') }}"
                 class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
@@ -163,8 +146,10 @@
                 <p>Category</p>
               </a>
             </li>
+             @endcan
 
             {{-- Sub Category --}}
+            @can('subcategory-view')
             <li class="nav-item">
               <a href="{{ route('admin.subcategories.index') }}"
                 class="nav-link {{ request()->routeIs('admin.subcategories.*') ? 'active' : '' }}">
@@ -172,8 +157,9 @@
                 <p>Sub Category</p>
               </a>
             </li>
-
+            @endcan
             {{-- Product --}}
+            @can('product-view')
             <li class="nav-item">
               <a href="{{ route('admin.products.index') }}"
                 class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
@@ -181,6 +167,7 @@
                 <p>Product</p>
               </a>
             </li>
+            @endcan
 
           </ul>
         </li>
@@ -203,6 +190,7 @@
           <ul class="nav nav-treeview">
 
             {{-- Order --}}
+            @can('order-view')
             <li class="nav-item">
               <a href="{{ route('admin.orders.index') }}"
                 class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
@@ -210,8 +198,10 @@
                 <p>Orders</p>
               </a>
             </li>
+            @endcan
 
             {{-- Custom Order --}}
+            @can('custom-order-view')
             <li class="nav-item">
               <a href="{{ route('admin.custom-orders.index') }}"
                 class="nav-link {{ request()->routeIs('admin.custom-orders.*') ? 'active' : '' }}">
@@ -219,6 +209,7 @@
                 <p>Custom Orders</p>
               </a>
             </li>
+            @endcan
 
           </ul>
         </li>
@@ -231,7 +222,8 @@
         request()->routeIs('admin.banner-ads.*') ||
         request()->routeIs('admin.popup-banner-ads.*') ||
         request()->routeIs('admin.social-media.*')||
-        request()->routeIs('admin.reels.*');
+        request()->routeIs('admin.reels.*') ||
+        request()->routeIs('admin.events.*');
         @endphp
 
 
@@ -247,6 +239,7 @@
           <ul class="nav nav-treeview">
 
             {{-- Banner Ads --}}
+            @can('banner-ad-view')
             <li class="nav-item">
               <a href="{{ route('admin.banner-ads.index') }}"
                 class="nav-link {{ request()->routeIs('admin.banner-ads.*') ? 'active' : '' }}">
@@ -254,8 +247,10 @@
                 <p>Banner Ads</p>
               </a>
             </li>
+            @endcan
 
             {{-- Popup Banner Ads --}}
+            @can('popup-ad-view')
             <li class="nav-item">
               <a href="{{ route('admin.popup-banner-ads.index') }}"
                 class="nav-link {{ request()->routeIs('admin.popup-banner-ads.*') ? 'active' : '' }}">
@@ -263,8 +258,10 @@
                 <p>Popup Banner Ads</p>
               </a>
             </li>
+            @endcan
 
             {{-- Social Media --}}
+            @can('social-media-edit')
             <li class="nav-item">
               <a href="{{ route('admin.social-media.index') }}"
                 class="nav-link {{ request()->routeIs('admin.social-media.*') ? 'active' : '' }}">
@@ -272,14 +269,25 @@
                 <p>Social Media</p>
               </a>
             </li>
-
+            @endcan
+            @can('reel-view')
             <li class="nav-item">
               <a href="{{ route('admin.reels.index') }}"
                 class="nav-link {{ request()->routeIs('admin.reels.*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-video"></i> 
+                <i class="nav-icon fas fa-video"></i>
                 <p>Media Reels</p>
               </a>
             </li>
+            @endcan
+            @can('event-view')
+            <li class="nav-item">
+              <a href="{{ route('admin.events.index') }}"
+                class="nav-link {{ request()->routeIs('admin.events.*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-calendar-alt"></i>
+                <p>Events</p>
+              </a>
+            </li>
+            @endcan
 
           </ul>
         </li>

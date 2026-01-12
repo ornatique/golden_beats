@@ -25,29 +25,50 @@ class SubcategoryController extends Controller
             ->addColumn('category', fn($row) => $row->category->name)
             ->addColumn('image', function ($row) {
                 return $row->image
-                    ? '<img src="'.asset($row->image).'" width="50">'
+                    ? '<img src="' . asset($row->image) . '" width="50">'
                     : '-';
             })
             ->addColumn('action', function ($row) {
-                return '
-                    <a href="'.route('admin.subcategories.edit',$row->id).'" class="btn btn-sm btn-primary">Edit</a>
-                    <form method="POST" action="'.route('admin.subcategories.destroy',$row->id).'"
-                          style="display:inline">
-                        '.csrf_field().method_field('DELETE').'
-                        <button onclick="return confirm(\'Are you sure?\')" class="btn btn-sm btn-danger">
-                            Delete
-                        </button>
-                    </form>
-                ';
+
+                $html = '';
+
+                // ✏️ EDIT
+                if (auth()->user()->can('subcategory-edit')) {
+                    $html .= '
+            <a href="' . route('admin.subcategories.edit', $row->id) . '"
+               class="btn btn-sm btn-primary mr-1">
+                Edit
+            </a>
+        ';
+                }
+
+                // 🗑 DELETE
+                if (auth()->user()->can('subcategory-delete')) {
+                    $html .= '
+            <form method="POST"
+                  action="' . route('admin.subcategories.destroy', $row->id) . '"
+                  style="display:inline-block"
+                  onsubmit="return confirm(\'Are you sure?\')">
+                ' . csrf_field() . method_field('DELETE') . '
+                <button class="btn btn-sm btn-danger">
+                    Delete
+                </button>
+            </form>
+        ';
+                }
+
+                return $html ?: '-';
             })
-            ->rawColumns(['image','action'])
+            ->rawColumns(['action'])
+
+            ->rawColumns(['image', 'action'])
             ->make(true);
     }
 
     public function create()
     {
-       
-        $categories = Category::pluck('name','id');
+
+        $categories = Category::pluck('name', 'id');
         return view('admin.subcategories.create', compact('categories'));
     }
 
@@ -60,26 +81,26 @@ class SubcategoryController extends Controller
             'image'       => 'nullable|image',
         ]);
 
-        $data = $request->only('category_id','name','priority','color');
+        $data = $request->only('category_id', 'name', 'priority', 'color');
 
         if ($request->hasFile('image')) {
             $path = public_path('uploads/subcategories');
-            if (!File::exists($path)) File::makeDirectory($path,0755,true);
-            $img = time().'_'.$request->image->getClientOriginalName();
-            $request->image->move($path,$img);
-            $data['image'] = 'uploads/subcategories/'.$img;
+            if (!File::exists($path)) File::makeDirectory($path, 0755, true);
+            $img = time() . '_' . $request->image->getClientOriginalName();
+            $request->image->move($path, $img);
+            $data['image'] = 'uploads/subcategories/' . $img;
         }
 
         Subcategory::create($data);
 
         return redirect()->route('admin.subcategories.index')
-            ->with('success','Subcategory created');
+            ->with('success', 'Subcategory created');
     }
 
     public function edit(Subcategory $subcategory)
     {
-        $categories = Category::pluck('name','id');
-        return view('admin.subcategories.edit', compact('subcategory','categories'));
+        $categories = Category::pluck('name', 'id');
+        return view('admin.subcategories.edit', compact('subcategory', 'categories'));
     }
 
     public function update(Request $request, Subcategory $subcategory)
@@ -91,25 +112,25 @@ class SubcategoryController extends Controller
             'image'       => 'nullable|image',
         ]);
 
-        $data = $request->only('category_id','name','priority','color');
+        $data = $request->only('category_id', 'name', 'priority', 'color');
 
         if ($request->hasFile('image')) {
             $path = public_path('uploads/subcategories');
-            if (!File::exists($path)) File::makeDirectory($path,0755,true);
-            $img = time().'_'.$request->image->getClientOriginalName();
-            $request->image->move($path,$img);
-            $data['image'] = 'uploads/subcategories/'.$img;
+            if (!File::exists($path)) File::makeDirectory($path, 0755, true);
+            $img = time() . '_' . $request->image->getClientOriginalName();
+            $request->image->move($path, $img);
+            $data['image'] = 'uploads/subcategories/' . $img;
         }
 
         $subcategory->update($data);
 
         return redirect()->route('admin.subcategories.index')
-            ->with('success','Subcategory updated');
+            ->with('success', 'Subcategory updated');
     }
 
     public function destroy(Subcategory $subcategory)
     {
         $subcategory->delete();
-        return back()->with('success','Subcategory deleted');
+        return back()->with('success', 'Subcategory deleted');
     }
 }

@@ -70,22 +70,45 @@ class OrderController extends Controller
 
             // ✅ PRINT + PDF ONLY
             ->addColumn('action', function ($row) {
-                return '
-                    <a href="' . route('admin.orders.print', $row->order_id) . '"
-                    class="btn btn-success btn-sm" target="_blank">
-                        Print
-                    </a>
 
-                    <a href="' . route('admin.orders.pdf', $row->order_id) . '"
-                    class="btn btn-danger btn-sm ml-1" target="_blank">
-                        PDF
-                    </a>
-                    <button class="btn btn-danger btn-sm"
-                        onclick="deleteOrder(' . $row->id . ')">
-                        Delete
-                    </button>
-                ';
+                $html = '';
+
+                // 🖨 PRINT
+                if (auth()->user()->can('order-print')) {
+                    $html .= '
+            <a href="' . route('admin.orders.print', $row->order_id) . '"
+               class="btn btn-success btn-sm mr-1"
+               target="_blank">
+                Print
+            </a>
+        ';
+                }
+
+                // 📄 PDF
+                if (auth()->user()->can('order-pdf')) {
+                    $html .= '
+            <a href="' . route('admin.orders.pdf', $row->order_id) . '"
+               class="btn btn-danger btn-sm mr-1"
+               target="_blank">
+                PDF
+            </a>
+        ';
+                }
+
+                // 🗑 DELETE
+                if (auth()->user()->can('order-delete')) {
+                    $html .= '
+            <button class="btn btn-danger btn-sm"
+                onclick="deleteOrder(' . $row->id . ')">
+                Delete
+            </button>
+        ';
+                }
+
+                return $html ?: '-';
             })
+            ->rawColumns(['action'])
+
 
             ->rawColumns(['status', 'action', 'remarks'])
             ->make(true);

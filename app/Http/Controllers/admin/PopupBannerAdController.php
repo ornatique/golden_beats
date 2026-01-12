@@ -38,11 +38,22 @@ class PopupBannerAdController extends Controller
 
 
             ->addColumn('action', function ($ad) {
-                return '
+
+                $html = '';
+
+                if (auth()->user()->can('popup-ad-edit')) {
+                            $html .= '
                     <a href="' . route('admin.popup-banner-ads.edit', $ad->id) . '"
-                       class="btn btn-primary btn-sm">Edit</a>
+                    class="btn btn-primary btn-sm">
+                    Edit
+                    </a>
                 ';
+                }
+
+                return $html ?: '-';
             })
+            ->rawColumns(['action'])
+
 
             ->rawColumns(['image', 'status', 'action'])
             ->make(true);

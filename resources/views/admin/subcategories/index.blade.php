@@ -4,9 +4,11 @@
 <div class="card">
     <div class="card-header">
         <h3 >List Subcategories</h3>
+         @can('subcategory-create')
         <a href="{{ route('admin.subcategories.create') }}" class="btn btn-primary float-right">
             Add Sub-Category
         </a>
+         @endcan
     </div>
 
     <div class="card-body">

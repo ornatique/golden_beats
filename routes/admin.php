@@ -13,7 +13,8 @@ use App\Http\Controllers\Admin\{
     PopupBannerAdController,
     BannerAdController,
     SocialMediaController,
-    ReelController
+    ReelController,
+    EventController
 };
 
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
@@ -269,5 +270,45 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::middleware('permission:reel-delete')->group(function () {
         Route::delete('reels/{reel}', [ReelController::class, 'destroy'])->name('reels.destroy');
         Route::delete('reel-comments/{comment}', [ReelController::class, 'deleteComment'])->name('reel-comments.delete');
+    });
+
+
+    /*
+|--------------------------------------------------------------------------
+| EVENTS
+|--------------------------------------------------------------------------
+*/
+
+    // 👀 VIEW EVENTS
+    Route::middleware('permission:event-view')->group(function () {
+        Route::get('events', [EventController::class, 'index'])
+            ->name('events.index');
+
+        Route::get('events/data', [EventController::class, 'data'])
+            ->name('events.data');
+    });
+
+    // ➕ CREATE EVENT
+    Route::middleware('permission:event-create')->group(function () {
+        Route::get('events/create', [EventController::class, 'create'])
+            ->name('events.create');
+
+        Route::post('events', [EventController::class, 'store'])
+            ->name('events.store');
+    });
+
+    // ✏️ EDIT EVENT
+    Route::middleware('permission:event-edit')->group(function () {
+        Route::get('events/{event}/edit', [EventController::class, 'edit'])
+            ->name('events.edit');
+
+        Route::put('events/{event}', [EventController::class, 'update'])
+            ->name('events.update');
+    });
+
+    // ❌ DELETE EVENT
+    Route::middleware('permission:event-delete')->group(function () {
+        Route::delete('events/{event}', [EventController::class, 'destroy'])
+            ->name('events.destroy');
     });
 });

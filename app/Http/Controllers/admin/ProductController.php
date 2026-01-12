@@ -68,11 +68,32 @@ class ProductController extends Controller
 
 
             ->addColumn('action', function ($p) {
-                return '
-                    <a href="' . route('admin.products.edit', $p->id) . '" class="btn btn-primary btn-sm">Edit</a>
-                    <button class="btn btn-danger btn-sm" onclick="deleteProduct(' . $p->id . ')">Delete</button>
-                ';
+
+                $html = '';
+
+                // ✏️ EDIT PRODUCT
+                if (auth()->user()->can('product-edit')) {
+                    $html .= '
+            <a href="' . route('admin.products.edit', $p->id) . '"
+               class="btn btn-primary btn-sm mr-1">
+                Edit
+            </a>
+        ';
+                }
+
+                // 🗑 DELETE PRODUCT
+                if (auth()->user()->can('product-delete')) {
+                    $html .= '
+            <button class="btn btn-danger btn-sm"
+                onclick="deleteProduct(' . $p->id . ')">
+                Delete
+            </button>
+        ';
+                }
+
+                return $html ?: '-';
             })
+            ->rawColumns(['action'])
 
             ->rawColumns(['checkbox', 'qr', 'gallery', 'action'])
             ->make(true);
@@ -271,7 +292,7 @@ class ProductController extends Controller
         return $pdf->download('products.pdf');
     }
 
-     public function bulkPdfdetail(Request $request)
+    public function bulkPdfdetail(Request $request)
     {
         $products = Product::with(['category', 'subcategory'])
             ->when($request->product_ids, fn($q) => $q->whereIn('id', $request->product_ids))

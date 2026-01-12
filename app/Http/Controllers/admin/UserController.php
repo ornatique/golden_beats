@@ -12,32 +12,79 @@ use App\Exports\UsersExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\File;
 use App\Models\Category;
+
 class UserController extends Controller
 {
+    // public function index(Request $request)
+    // {
+    //     $authUser = auth()->user();
+
+    //     // 🚫 Customer must NOT use filters
+    //     if ($authUser->role === 'customer' && ($request->filled('only') || $request->filled('status'))) {
+    //         return redirect()->route('admin.dashboard')
+    //             ->with('error', 'Unauthorized access');
+    //     }
+
+    //     // 🚫 Invalid filter values
+    //     $allowedOnly = ['customer', 'user'];
+    //     $allowedStatus = ['active', 'inactive'];
+
+    //     if ($request->filled('only') && !in_array($request->only, $allowedOnly)) {
+    //         return redirect()->route('admin.dashboard');
+    //     }
+
+    //     if ($request->filled('status') && !in_array($request->status, $allowedStatus)) {
+    //         return redirect()->route('admin.dashboard');
+    //     }
+
+    //     return view('admin.users.index');
+    // }
     public function index(Request $request)
     {
-        $authUser = auth()->user();
+        $only   = $request->get('only', 'user');   // default = user
+        $status = $request->get('status');
 
-        // 🚫 Customer must NOT use filters
-        if ($authUser->role === 'customer' && ($request->filled('only') || $request->filled('status'))) {
-            return redirect()->route('admin.dashboard')
-                ->with('error', 'Unauthorized access');
-        }
-
-        // 🚫 Invalid filter values
-        $allowedOnly = ['customer', 'user'];
+        // ✅ Allowed values (security)
+        $allowedOnly   = ['user', 'customer'];
         $allowedStatus = ['active', 'inactive'];
 
-        if ($request->filled('only') && !in_array($request->only, $allowedOnly)) {
-            return redirect()->route('admin.dashboard');
+        // 🚫 Invalid query values
+        if (!in_array($only, $allowedOnly)) {
+            abort(404);
         }
 
-        if ($request->filled('status') && !in_array($request->status, $allowedStatus)) {
-            return redirect()->route('admin.dashboard');
+        if ($status && !in_array($status, $allowedStatus)) {
+            abort(404);
         }
 
-        return view('admin.users.index');
+        // 🔐 PERMISSION ENFORCEMENT (KEY PART)
+        if ($only === 'user' && !auth()->user()->can('user-view')) {
+            abort(403, 'You are not allowed to view users');
+        }
+
+        if ($only === 'customer' && !auth()->user()->can('customer-view')) {
+            abort(403, 'You are not allowed to view customers');
+        }
+
+        // ✅ Build query
+        $query = User::query();
+
+        if ($only === 'customer') {
+            $query->where('type', 'customer');
+
+            if ($status) {
+                $query->where('status', $status);
+            }
+        } else {
+            $query->where('type', 'user');
+        }
+
+        return view('admin.users.index', [
+            'only'   => $only,
+            'status' => $status,
+        ]);
     }
+
 
     private function userListQuery(Request $request)
     {
@@ -80,7 +127,7 @@ class UserController extends Controller
         $users = $this->userListQuery($request);
         $only = $request->get('only');
         return DataTables::of($users)
-        
+
             ->addColumn('profile_image', function ($user) {
                 if ($user->image) {
                     return '<img src="' . asset($user->image) . '"
@@ -113,16 +160,16 @@ class UserController extends Controller
                     <div class="custom-control custom-switch">
                         <input type="checkbox"
                             class="custom-control-input toggle-status"
-                            id="statusSwitch'.$user->id.'"
-                            data-id="'.$user->id.'"
-                            '.$checked.' '.$disabled.'>
+                            id="statusSwitch' . $user->id . '"
+                            data-id="' . $user->id . '"
+                            ' . $checked . ' ' . $disabled . '>
                         <label class="custom-control-label"
-                            for="statusSwitch'.$user->id.'"></label>
+                            for="statusSwitch' . $user->id . '"></label>
                     </div>
                 ';
             })
 
-           ->addColumn('action', function ($user) use ($only) {
+            ->addColumn('action', function ($user) use ($only) {
 
                 if (auth()->user()->role === 'customer') {
                     return '<span class="badge bg-secondary">Not Allowed</span>';
@@ -132,10 +179,10 @@ class UserController extends Controller
                     return '<span class="badge bg-secondary">Not Allowed</span>';
                 }
 
-               $edit = '<a href="' . route('admin.users.edit', [
-                        'user' => $user->id,
-                        'only' => $only
-                    ]) . '" class="btn btn-sm btn-primary">Edit</a>';
+                $edit = '<a href="' . route('admin.users.edit', [
+                    'user' => $user->id,
+                    'only' => $only
+                ]) . '" class="btn btn-sm btn-primary">Edit</a>';
 
 
                 $delete = '<form method="POST"
@@ -162,23 +209,23 @@ class UserController extends Controller
     public function create()
     {
         $roles = Role::all();
-        $categories = Category::pluck('name','id');
-        return view('admin.users.create', compact('roles','categories'));
+        $categories = Category::pluck('name', 'id');
+        return view('admin.users.create', compact('roles', 'categories'));
     }
 
     public function store(Request $request)
     {
 
         $request->validate([
-            'name'=>'required',
-            'email'=>'required|email|unique:users',
-            'password'=>'required|min:6',
-            'role'=>'required',
-            'number' =>'required',
-            'state'=>'required',
-            'city' =>'required',
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|min:6',
+            'role' => 'required',
+            'number' => 'required',
+            'state' => 'required',
+            'city' => 'required',
             'image' => 'required|image|mimes:jpg,jpeg,png,webp',
-            
+
         ]);
         $imagePath = null;
         if ($request->hasFile('image')) {
@@ -213,7 +260,7 @@ class UserController extends Controller
             'image' => $imagePath,
             'category_ids' => json_encode($request->category_ids),
         ]);
-        
+
         $user->assignRole($request->role);
 
         return redirect()->route('admin.users.index')->with('success', 'User created successfully');
@@ -226,13 +273,13 @@ class UserController extends Controller
         }
         $selectedCategories = json_decode($user->category_ids, true) ?? [];
         $roles = Role::all();
-        $categories = Category::pluck('name','id');
-        return view('admin.users.edit', compact('user', 'roles','categories','selectedCategories'));
+        $categories = Category::pluck('name', 'id');
+        return view('admin.users.edit', compact('user', 'roles', 'categories', 'selectedCategories'));
     }
 
     public function update(Request $request, User $user)
     {
-        
+
         //  Prevent non-admin from editing admin
         if ($user->hasRole('admin') && !auth()->user()->hasRole('admin')) {
             abort(403, 'You are not allowed to update admin user');
@@ -328,7 +375,7 @@ class UserController extends Controller
 
     public function updateStatus(Request $request)
     {
-        
+
         $request->validate([
             'id' => 'required|exists:users,id',
             'status' => 'required|boolean',
@@ -341,11 +388,11 @@ class UserController extends Controller
 
         $user = User::findOrFail($request->id);
         if ($user->role === 'admin') {
-        return response()->json([
-            'success' => false,
-            'message' => 'Admin user cannot be deactivated'
-        ], 403);
-    }
+            return response()->json([
+                'success' => false,
+                'message' => 'Admin user cannot be deactivated'
+            ], 403);
+        }
         $user->status = $request->status;
         $user->save();
 
@@ -354,5 +401,4 @@ class UserController extends Controller
             'message' => 'Status updated successfully'
         ]);
     }
-
 }

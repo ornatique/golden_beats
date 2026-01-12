@@ -4,10 +4,11 @@
 <div class="card">
     <div class="card-header">
         <h3>List Categories</h3>
-
+         @can('category-create')
         <a href="{{ route('admin.categories.create') }}" class="btn btn-primary mb-2 float-right">
             Add Category
         </a>
+        @endcan
     </div>
     <div class="card-body">
         <table class="table table-bordered" id="category-table">
