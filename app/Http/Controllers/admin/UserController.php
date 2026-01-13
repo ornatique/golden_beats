@@ -130,9 +130,10 @@ class UserController extends Controller
 
             ->addColumn('profile_image', function ($user) {
                 if ($user->image) {
-                    return '<img src="' . asset($user->image) . '"
-                                width="80" height="80"
-                                style="object-fit:cover;border-radius:60%;">';
+                    return '<img src="' . asset('uploads/users/' . $user->image) . '"
+                 width="80"
+                 height="80"
+                 style="object-fit:cover;border-radius:50%;">';
                 }
                 return '<span class="badge bg-secondary">No Image</span>';
             })
@@ -257,7 +258,7 @@ class UserController extends Controller
             'number' => $request->number,
             'state' => $request->states,
             'city' => $request->city,
-            'image' => $imagePath,
+            'image' => $imageName,
             'category_ids' => json_encode($request->category_ids),
         ]);
 
@@ -324,7 +325,7 @@ class UserController extends Controller
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
             $image->move($destinationPath, $imageName);
 
-            $data['image'] = 'uploads/users/' . $imageName;
+            $data['image'] = $imageName;
         }
 
         // 🏷 Category (ONLY if customer)
