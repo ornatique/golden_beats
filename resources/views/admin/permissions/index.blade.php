@@ -1,12 +1,15 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="container">
-    <h3>Permissions</h3>
+<div class="card">
+     <div class="card-header">
+            <h3>Permission</h3>
+        </div>
+    <div class="card-body">
 
-    <a href="{{ route('admin.permissions.create') }}" class="btn btn-primary mb-3">Create Permission</a>
+    <a href="{{ route('admin.permissions.create') }}" class="btn btn-primary mb-3 float-right">Create Permission</a>
 
-    <table class="table table-bordered">
+    <table class="table table-bordered" id="permissionsTable">
         <thead>
             <tr>
                 <th>#</th>
@@ -42,4 +45,20 @@
         </tbody>
     </table>
 </div>
+</div>
 @endsection
+@push('scripts')
+<script>
+$(document).ready(function () {
+    $('#permissionsTable').DataTable({
+        paging: true,
+        searching: true,
+        ordering: true,
+        lengthChange: true,
+        pageLength: 10,
+        order: [[0, 'asc']], // sort by permission name
+    });
+});
+</script>
+@endpush
+

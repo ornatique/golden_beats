@@ -103,6 +103,28 @@ toastr.options = {
 
 <!-- Page Scripts -->
 @stack('scripts')
+<script>
+$(document).ready(function () {
+
+    // Toggle dropdown
+    $('#userToggle').on('click', function (e) {
+        e.stopPropagation();
+        $('#userDropdown').toggle();
+    });
+
+    // Close when clicking outside
+    $(document).on('click', function () {
+        $('#userDropdown').hide();
+    });
+
+    // Logout
+    $('#logoutBtn').on('click', function (e) {
+        e.preventDefault();
+        $('#logout-form').submit();
+    });
+
+});
+</script>
 
 </body>
 </html>

@@ -14,7 +14,9 @@ use App\Http\Controllers\Admin\{
     BannerAdController,
     SocialMediaController,
     ReelController,
-    EventController
+    EventController,
+    CustomerController,
+    DashboardController
 };
 
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
@@ -44,6 +46,33 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     Route::middleware('permission:user-delete')->group(function () {
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | CUSTOMERS
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('permission:customers-view')->group(function () {
+        Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+        Route::get('customers/data', [CustomerController::class, 'getData'])->name('customers.data');
+        Route::get('customers/export/excel', [CustomerController::class, 'exportExcel'])->name('customers.export.excel');
+    });
+
+    Route::middleware('permission:customers-create')->group(function () {
+        Route::get('customers/create', [CustomerController::class, 'create'])->name('customers.create');
+        Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
+    });
+
+    Route::middleware('permission:customers-edit')->group(function () {
+        Route::get('customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
+        Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+        Route::post('customers/status', [CustomerController::class, 'updateStatus'])->name('customers.status');
+        Route::post('check-email', [CustomerController::class, 'checkEmail'])->name('check.email');
+    });
+
+    Route::middleware('permission:customers-delete')->group(function () {
+        Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
     });
 
     /*
@@ -311,4 +340,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::delete('events/{event}', [EventController::class, 'destroy'])
             ->name('events.destroy');
     });
+
+    Route::get('dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
 });

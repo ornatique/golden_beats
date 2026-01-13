@@ -2,7 +2,7 @@
   <!-- Brand Logo -->
   <a href="{{ url('/admin/dashboard') }}" class="brand-link">
     <!-- <img src="dist/img/AdminLTELogo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8"> -->
-    <span class="brand-text font-weight-light">Golden Beads Admin</span>
+    <span class="brand-text font-weight-light">Golden Beads</span>
   </a>
 
   <!-- Sidebar -->
@@ -21,7 +21,7 @@
             </p>
           </a>
         </li>
-
+        @can('role_perm_sidebar')
         <li class="nav-item 
         {{ request()->routeIs('admin.permissions.*', 'admin.roles.*') ? 'menu-open' : '' }}">
 
@@ -53,7 +53,7 @@
             </li>
           </ul>
         </li>
-
+        @endcan
 
         @can('user-view')
         @php
@@ -86,8 +86,8 @@
         @can('customer-view')
         @php
         $isCustomerMenu =
-        request()->routeIs('admin.users.*') &&
-        request('only') === 'customer';
+        request()->routeIs('admin.users.*') ||
+        request()->routeIs('admin.customers.*') ;
         @endphp
 
         <li class="nav-item {{ $isCustomerMenu ? 'menu-open' : '' }}">
@@ -101,18 +101,10 @@
 
           <ul class="nav nav-treeview">
             <li class="nav-item">
-              <a href="{{ route('admin.users.index', ['only' => 'customer', 'status' => 'active']) }}"
-                class="nav-link {{ request('only') === 'customer' && request('status') === 'active' ? 'active' : '' }}">
+              <a href="{{ route('admin.customers.index') }}"
+                class="nav-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                 <i class="far fa-circle nav-icon"></i>
                 <p>All Customer</p>
-              </a>
-            </li>
-
-            <li class="nav-item">
-              <a href="{{ route('admin.users.index', ['only' => 'customer', 'status' => 'inactive']) }}"
-                class="nav-link {{ request('only') === 'customer' && request('status') === 'inactive' ? 'active' : '' }}">
-                <i class="far fa-circle nav-icon"></i>
-                <p>New Customer</p>
               </a>
             </li>
           </ul>
@@ -146,7 +138,7 @@
                 <p>Category</p>
               </a>
             </li>
-             @endcan
+            @endcan
 
             {{-- Sub Category --}}
             @can('subcategory-view')

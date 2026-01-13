@@ -223,7 +223,7 @@ $(document).ready(function () {
             },
             image: {
                 required: true,
-                extension: "jpg|jpeg|png|webp"
+                extension: "jpg|jpeg|png|webp|gif"
             }
         },
 
