@@ -159,7 +159,7 @@
                                     <span class="remove-img"
                                         onclick="removeOldImage('{{ $img }}')">&times;</span>
 
-                                    <img src="{{ asset($img) }}">
+                                    <img src="{{ asset('uploads/products/'.$img) }}">
 
                                     {{-- 🔥 THIS IS IMPORTANT --}}
                                     <input type="hidden" name="old_gallery[]" value="{{ $img }}">

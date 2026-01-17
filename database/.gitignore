@@ -1,1 +1,7 @@
-*.sqlite*
+# Database
+*.sqlite
+*.sqlite3
+
+# Ignore uploads
+/public/uploads/
+/public/uploads/**

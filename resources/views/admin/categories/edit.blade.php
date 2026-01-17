@@ -10,8 +10,8 @@
             </div>
 
             <form method="POST"
-                  action="{{ route('admin.categories.update', $category->id) }}"
-                  enctype="multipart/form-data" id="categoryForm" data-mode="edit">
+                action="{{ route('admin.categories.update', $category->id) }}"
+                enctype="multipart/form-data" id="categoryForm" data-mode="edit">
                 @csrf
                 @method('PUT')
 
@@ -23,9 +23,9 @@
                             <div class="form-group">
                                 <label>Name <span class="text-danger">*</span></label>
                                 <input type="text"
-                                       name="name"
-                                       class="form-control"
-                                       value="{{ old('name',$category->name) }}">
+                                    name="name"
+                                    class="form-control"
+                                    value="{{ old('name',$category->name) }}">
                             </div>
                         </div>
 
@@ -34,9 +34,9 @@
                             <div class="form-group">
                                 <label>Priority</label>
                                 <input type="number"
-                                       name="priority"
-                                       class="form-control"
-                                       value="{{ old('priority',$category->priority) }}">
+                                    name="priority"
+                                    class="form-control"
+                                    value="{{ old('priority',$category->priority) }}">
                             </div>
                         </div>
                     </div>
@@ -47,8 +47,8 @@
                             <div class="form-group">
                                 <label>Shape</label>
                                 <select name="shape"
-                                        id="shapeSelect"
-                                        class="form-control">
+                                    id="shapeSelect"
+                                    class="form-control">
                                     <option value="">Select Shape</option>
                                     <option value="circle" {{ $category->shape=='circle'?'selected':'' }}>Circle</option>
                                     <option value="rectangle" {{ $category->shape=='rectangle'?'selected':'' }}>Rectangle</option>
@@ -64,11 +64,11 @@
                             <div class="form-group">
                                 <label>Select Color</label>
                                 <input type="color"
-                                       name="color"
-                                       id="colorPicker"
-                                       value="{{  $category->color }}"
-                                       class="form-control @error('color') is-invalid @enderror"
-                                       style="height:38px;">
+                                    name="color"
+                                    id="colorPicker"
+                                    value="{{  $category->color }}"
+                                    class="form-control @error('color') is-invalid @enderror"
+                                    style="height:38px;">
                                 @error('color')
                                 <span class="text-danger small">{{ $message }}</span>
                                 @enderror
@@ -79,12 +79,11 @@
                             <div class="form-group">
                                 <label>Color Code</label>
                                 <input type="text"
-                                       id="colorCodeValue"
-                                       value="{{  $category->color }}"
-                                       class="form-control"
-                                       >
-                                      
-                                     
+                                    id="colorCodeValue"
+                                    value="{{  $category->color }}"
+                                    class="form-control">
+
+
                             </div>
                         </div>
                     </div>
@@ -95,15 +94,18 @@
                             <div class="form-group">
                                 <label>Category Image</label>
                                 <input type="file"
-                                       name="image"
-                                       class="form-control"
-                                       accept="image/*"
-                                       onchange="previewCategoryImage(event)">
+                                    name="image"
+                                    class="form-control"
+                                    accept="image/*"
+                                    onchange="previewCategoryImage(event)">
                                 <div class="mt-2">
                                     @if($category->image)
-                                        <img src="{{ asset($category->image) }}"
-                                             id="imagePreview"
-                                             style="width:100px;border-radius:6px;">
+                                    <img src="{{ $category->image
+                                            ? asset('uploads/categories/' . $category->image)
+                                            : asset('dist/img/no-image.png') }}"
+                                        id="imagePreview"
+                                        style="width:100px;border-radius:6px;">
+
                                     @endif
                                 </div>
                             </div>
@@ -153,112 +155,110 @@
 
 @push('scripts')
 <script>
+    $(document).ready(function() {
 
+        // 🔹 Two-way binding
+        $('#colorPicker').on('input', function() {
+            $('#colorCodeValue').val($(this).val());
+        });
 
-$(document).ready(function () {
+        $('#colorCodeValue').on('input', function() {
+            let color = $(this).val();
+            if (/^#([0-9A-Fa-f]{6})$/.test(color)) {
+                $('#colorPicker').val(color);
+            }
+        });
 
-    // 🔹 Two-way binding
-    $('#colorPicker').on('input', function () {
-        $('#colorCodeValue').val($(this).val());
     });
 
-    $('#colorCodeValue').on('input', function () {
-        let color = $(this).val();
-        if (/^#([0-9A-Fa-f]{6})$/.test(color)) {
-            $('#colorPicker').val(color);
-        }
-    });
+    function previewCategoryImage(event) {
+        let img = document.getElementById('imagePreview');
+        img.src = URL.createObjectURL(event.target.files[0]);
+        img.style.display = 'block';
+    }
 
-});
+    $(document).ready(function() {
+        let isEdit = $('#categoryForm').data('mode') === 'edit';
+        $('#categoryForm').validate({
+            ignore: [],
 
-function previewCategoryImage(event) {
-    let img = document.getElementById('imagePreview');
-    img.src = URL.createObjectURL(event.target.files[0]);
-    img.style.display = 'block';
-}
+            rules: {
+                name: {
+                    required: true,
+                    minlength: 2
+                },
+                priority: {
+                    required: true,
+                    digits: true,
+                    min: 0
+                },
+                shape: {
+                    required: true
+                },
+                color: {
+                    required: true,
+                    required: function() {
+                        return $('#shapeSelect').val() !== '';
+                    }
+                },
+                image: {
 
-$(document).ready(function () {
-let isEdit = $('#categoryForm').data('mode') === 'edit';
-    $('#categoryForm').validate({
-        ignore: [],
-
-        rules: {
-            name: {
-                required: true,
-                minlength: 2
-            },
-            priority: {
-                 required: true,
-                digits: true,
-                min: 0
-            },
-            shape: {
-                required: true
-            },
-            color: {
-                 required: true,
-                required: function () {
-                    return $('#shapeSelect').val() !== '';
+                    required: function() {
+                        return !isEdit; // ✅ ONLY REQUIRED ON CREATE
+                    },
+                    extension: "jpg|jpeg|png|webp|gif"
                 }
             },
-            image: {
-                
-                  required: function () {
-                return !isEdit;   // ✅ ONLY REQUIRED ON CREATE
+
+            messages: {
+                name: {
+                    required: "Please enter category name",
+                    minlength: "Name must be at least 2 characters"
+                },
+                priority: {
+                    digits: "Only numbers allowed",
+                    min: "Priority must be 0 or greater"
+                },
+                shape: {
+                    required: "Please select a shape"
+                },
+                color: {
+                    required: "Please select a color"
+                },
+                image: {
+                    extension: "Only JPG, JPEG, PNG, WEBP images allowed"
+                }
             },
-                extension: "jpg|jpeg|png|webp|gif"
+
+            errorElement: 'span',
+            errorClass: 'invalid-feedback',
+
+            errorPlacement: function(error, element) {
+                if (element.attr("type") === "color") {
+                    error.insertAfter(element);
+                } else {
+                    error.insertAfter(element);
+                }
+            },
+
+            highlight: function(element) {
+                $(element).addClass('is-invalid');
+            },
+
+            unhighlight: function(element) {
+                $(element).removeClass('is-invalid');
+            },
+
+            submitHandler: function(form) {
+                form.submit(); // ✅ allow submit
             }
-        },
+        });
 
-        messages: {
-            name: {
-                required: "Please enter category name",
-                minlength: "Name must be at least 2 characters"
-            },
-            priority: {
-                digits: "Only numbers allowed",
-                min: "Priority must be 0 or greater"
-            },
-            shape: {
-                required: "Please select a shape"
-            },
-            color: {
-                required: "Please select a color"
-            },
-            image: {
-                extension: "Only JPG, JPEG, PNG, WEBP images allowed"
-            }
-        },
+        // 🔁 Re-validate color when shape changes
+        $('#shapeSelect').on('change', function() {
+            $('#colorPicker').valid();
+        });
 
-        errorElement: 'span',
-        errorClass: 'invalid-feedback',
-
-        errorPlacement: function (error, element) {
-            if (element.attr("type") === "color") {
-                error.insertAfter(element);
-            } else {
-                error.insertAfter(element);
-            }
-        },
-
-        highlight: function (element) {
-            $(element).addClass('is-invalid');
-        },
-
-        unhighlight: function (element) {
-            $(element).removeClass('is-invalid');
-        },
-
-        submitHandler: function (form) {
-            form.submit(); // ✅ allow submit
-        }
     });
-
-    // 🔁 Re-validate color when shape changes
-    $('#shapeSelect').on('change', function () {
-        $('#colorPicker').valid();
-    });
-
-});
 </script>
 @endpush

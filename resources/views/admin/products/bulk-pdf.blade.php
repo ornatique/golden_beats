@@ -97,7 +97,8 @@
                 <td class="image-cell">
                     @if($product->gallery && count($product->gallery))
                     @foreach($product->gallery as $img)
-                    <img src="{{ public_path($img) }}" class="product-img">
+                    <img src="{{ public_path('uploads/products/'.$img) }}"
+                         class="product-img">
                     @endforeach
                     @else
                     -

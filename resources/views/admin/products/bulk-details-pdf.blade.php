@@ -110,12 +110,13 @@
                 {{-- PRODUCT IMAGES --}}
                 <td class="image-cell">
                     @if(!empty($product->gallery) && count($product->gallery) > 0)
-                    <img src="{{ public_path($product->gallery[0]) }}"
+                    <img src="{{ public_path('uploads/products/'.$product->gallery[0]) }}"
                         class="product-img">
                     @else
                     -
                     @endif
                 </td>
+
             </tr>
             @endforeach
         </tbody>

@@ -23,7 +23,7 @@ class CategoryController extends Controller
             ->addIndexColumn()
             ->addColumn('image', function ($row) {
                 return $row->image
-                    ? '<img src="' . asset($row->image) . '" width="50">'
+                    ? '<img src="' .asset('uploads/categories/' . $row->image) . '" width="50">'
                     : '-';
             })
             ->addColumn('home', function ($row) {
@@ -89,7 +89,7 @@ class CategoryController extends Controller
             $img = $request->file('image');
             $name = time() . '_' . $img->getClientOriginalName();
             $img->move($path, $name);
-            $imagePath = 'uploads/categories/' . $name;
+            $imagePath =  $name;
         }
 
         Category::create([
@@ -143,7 +143,7 @@ class CategoryController extends Controller
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
             $image->move($path, $imageName);
 
-            $data['image'] = 'uploads/categories/' . $imageName;
+            $data['image'] = $imageName;
         }
 
         // ✅ Update category ONCE

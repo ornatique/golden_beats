@@ -61,90 +61,87 @@ class CustomerController extends Controller
     }
     // DataTables AJAX
     public function getData(Request $request)
-{
-    $users = $this->userListQuery($request);
+    {
+        $users = $this->userListQuery($request);
 
-    // 🔹 Status filter
-    if ($request->filled('status')) {
-        $users->where('status', $request->status === 'active' ? 1 : 0);
+        // 🔹 Status filter
+        if ($request->filled('status')) {
+            $users->where('status', $request->status === 'active' ? 1 : 0);
+        }
+
+        return DataTables::of($users)
+
+            ->addIndexColumn()
+
+            ->addColumn('profile_image', function ($user) {
+                return $user->image
+                    ? '<img src="'.asset($user->image).'"
+                            width="80" height="80"
+                            style="object-fit:cover;border-radius:60%;">'
+                    : '<span class="badge bg-secondary">No Image</span>';
+            })
+
+            ->addColumn('contact', fn($user) => $user->number ?? '-')
+
+            ->addColumn('reg_date', function ($user) {
+                return $user->created_at
+                    ? $user->created_at->format('d-m-Y H:i')
+                    : '-';
+            })
+
+            ->addColumn('role', fn($user) => ucfirst($user->role))
+
+            ->addColumn('status', function ($user) {
+
+                $checked  = $user->status ? 'checked' : '';
+                $disabled = $user->role === 'admin' ? 'disabled' : '';
+
+                return '
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox"
+                            class="custom-control-input toggle-status"
+                            id="statusSwitch'.$user->id.'"
+                            data-id="'.$user->id.'"
+                            '.$checked.' '.$disabled.'>
+                        <label class="custom-control-label"
+                            for="statusSwitch'.$user->id.'"></label>
+                    </div>
+                ';
+            })
+
+            ->addColumn('action', function ($user) {
+
+                $buttons = '';
+
+                if (auth()->user()->can('customers-edit')) {
+                    $buttons .= '
+                        <a href="'.route('admin.customers.edit',$user->id).'"
+                        class="btn btn-sm btn-primary mr-1">
+                        Edit
+                        </a>
+                    ';
+                }
+
+                if (auth()->user()->can('customers-delete')) {
+                    $buttons .= '
+                        <form method="POST"
+                            action="'.route('admin.customers.destroy',$user->id).'"
+                            style="display:inline;">
+                            '.csrf_field().method_field('DELETE').'
+                            <button class="btn btn-sm btn-danger"
+                                    onclick="return confirm(\'Are you sure?\')">
+                                Delete
+                            </button>
+                        </form>
+                    ';
+                }
+
+                return $buttons ?: '-';
+            })
+
+            ->rawColumns(['profile_image', 'status', 'action'])
+            ->make(true);
     }
-
-    return DataTables::of($users)
-
-        ->addIndexColumn()
-
-        ->addColumn('profile_image', function ($user) {
-            return $user->image
-                ? '<img src="'.asset($user->image).'"
-                        width="80" height="80"
-                        style="object-fit:cover;border-radius:60%;">'
-                : '<span class="badge bg-secondary">No Image</span>';
-        })
-
-        ->addColumn('contact', fn($user) => $user->number ?? '-')
-
-        ->addColumn('reg_date', function ($user) {
-            return $user->created_at
-                ? $user->created_at->format('d-m-Y H:i')
-                : '-';
-        })
-
-        ->addColumn('role', fn($user) => ucfirst($user->role))
-
-        ->addColumn('status', function ($user) {
-
-            $checked  = $user->status ? 'checked' : '';
-            $disabled = $user->role === 'admin' ? 'disabled' : '';
-
-            return '
-                <div class="custom-control custom-switch">
-                    <input type="checkbox"
-                        class="custom-control-input toggle-status"
-                        id="statusSwitch'.$user->id.'"
-                        data-id="'.$user->id.'"
-                        '.$checked.' '.$disabled.'>
-                    <label class="custom-control-label"
-                        for="statusSwitch'.$user->id.'"></label>
-                </div>
-            ';
-        })
-
-        ->addColumn('action', function ($user) {
-
-            $buttons = '';
-
-            if (auth()->user()->can('customers-edit')) {
-                $buttons .= '
-                    <a href="'.route('admin.customers.edit',$user->id).'"
-                       class="btn btn-sm btn-primary mr-1">
-                       Edit
-                    </a>
-                ';
-            }
-
-            if (auth()->user()->can('customers-delete')) {
-                $buttons .= '
-                    <form method="POST"
-                          action="'.route('admin.customers.destroy',$user->id).'"
-                          style="display:inline;">
-                        '.csrf_field().method_field('DELETE').'
-                        <button class="btn btn-sm btn-danger"
-                                onclick="return confirm(\'Are you sure?\')">
-                            Delete
-                        </button>
-                    </form>
-                ';
-            }
-
-            return $buttons ?: '-';
-        })
-
-        ->rawColumns(['profile_image', 'status', 'action'])
-        ->make(true);
-}
-
-
-
 
     public function create()
     {
@@ -297,16 +294,11 @@ class CustomerController extends Controller
 
     public function updateStatus(Request $request)
     {
-
+   
         $request->validate([
-            'id' => 'required|exists:users,id',
+            'id' => 'required|exists:customers,id',
             'status' => 'required|boolean',
         ]);
-
-        // Optional: permission check
-        if (!auth()->user()->can('user-edit')) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
 
         $Customer = Customer::findOrFail($request->id);
         $Customer->status = $request->status;

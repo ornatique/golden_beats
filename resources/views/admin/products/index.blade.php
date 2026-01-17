@@ -270,29 +270,40 @@
         };
     }
     // list of product view gallary on popup
+
     let images = [];
     let currentIndex = 0;
+    const IMAGE_BASE_PATH = "{{ asset('uploads/products') }}/";
 
-    $(document).on('click', '.gallery-thumb', function() {
-        images = $(this).data('images');
-        currentIndex = 0;
+    $(document).on('click', '.gallery-thumb', function () {
+
+        images = $(this).data('images');   // array of image names
+        currentIndex = $(this).data('index') || 0;
+
         showImage();
 
         new bootstrap.Modal(document.getElementById('galleryModal')).show();
     });
 
     function showImage() {
-        $('#sliderImage').attr('src', '/' + images[currentIndex]);
+        if (!images.length) return;
+
+        $('#sliderImage').attr(
+            'src',
+            IMAGE_BASE_PATH + images[currentIndex]
+        );
     }
 
-    $('#nextImg').on('click', function() {
+    $('#nextImg').on('click', function () {
         currentIndex = (currentIndex + 1) % images.length;
         showImage();
     });
 
-    $('#prevImg').on('click', function() {
+    $('#prevImg').on('click', function () {
         currentIndex = (currentIndex - 1 + images.length) % images.length;
         showImage();
     });
+
+
 </script>
 @endpush

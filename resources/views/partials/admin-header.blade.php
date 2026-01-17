@@ -1,9 +1,9 @@
 <!-- Navbar -->
 <nav class="main-header navbar navbar-expand navbar-white navbar-light">
     <ul class="navbar-nav">
-      <li class="nav-item">
-        <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
-      </li>
+        <li class="nav-item">
+            <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+        </li>
     </ul>
     <ul class="navbar-nav ml-auto">
         <li class="nav-item">
@@ -12,13 +12,14 @@
                 id="userToggle">
 
                 <img src="{{ auth()->user()->image
-            ? asset(auth()->user()->image)
-            : asset('dist/img/user-default.png') }}"
+                    ? asset('uploads/users/' . auth()->user()->image)
+                    : asset('dist/img/user-default.png') }}"
                     class="img-circle elevation-2"
                     style="width:32px;height:32px;object-fit:cover">
 
+
                 <span class="ml-2 d-none d-md-inline">
-                    {{ auth()->user()->name }}
+                    <b>{{ auth()->user()->name }}</b>
                 </span>
 
                 <i class="fas fa-chevron-down ml-1"></i>
@@ -33,7 +34,7 @@
                 z-index:1050;">
 
                 <div class="p-3 text-center text-muted">
-                    Welcome {{ auth()->user()->name }}
+                    Welcome <b>{{ auth()->user()->name }}</b>
                 </div>
 
                 <div style="border-top:1px solid #eee;"></div>

@@ -110,7 +110,9 @@
 
                                 <div class="mt-2">
                                     @if($subcategory->image)
-                                        <img src="{{ asset($subcategory->image) }}"
+                                        <img src="{{ $subcategory->image
+                                            ? asset('uploads/subcategories/' . $subcategory->image)
+                                            : asset('dist/img/no-image.png') }}"
                                              id="imagePreview"
                                              style="width:100px;border-radius:6px;border:1px solid #ddd;">
                                     @else

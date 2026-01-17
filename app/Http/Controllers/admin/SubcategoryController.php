@@ -25,7 +25,7 @@ class SubcategoryController extends Controller
             ->addColumn('category', fn($row) => $row->category->name)
             ->addColumn('image', function ($row) {
                 return $row->image
-                    ? '<img src="' . asset($row->image) . '" width="50">'
+                    ? '<img src="' . asset('uploads/subcategories/' . $row->image) . '" width="50">'
                     : '-';
             })
             ->addColumn('action', function ($row) {
@@ -88,7 +88,7 @@ class SubcategoryController extends Controller
             if (!File::exists($path)) File::makeDirectory($path, 0755, true);
             $img = time() . '_' . $request->image->getClientOriginalName();
             $request->image->move($path, $img);
-            $data['image'] = 'uploads/subcategories/' . $img;
+            $data['image'] =  $img;
         }
 
         Subcategory::create($data);
@@ -119,7 +119,7 @@ class SubcategoryController extends Controller
             if (!File::exists($path)) File::makeDirectory($path, 0755, true);
             $img = time() . '_' . $request->image->getClientOriginalName();
             $request->image->move($path, $img);
-            $data['image'] = 'uploads/subcategories/' . $img;
+            $data['image'] =  $img;
         }
 
         $subcategory->update($data);

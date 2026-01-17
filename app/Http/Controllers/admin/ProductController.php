@@ -57,7 +57,7 @@ class ProductController extends Controller
 
                 return collect($p->gallery)->map(
                     fn($img) =>
-                    '<img src="' . asset($img) . '"
+                    '<img src="' . asset('uploads/products/'.$img) . '"
              class="gallery-thumb rounded mr-1"
              style="width:50px;height:50px;cursor:pointer;object-fit:cover"
              data-images=\'' . json_encode($p->gallery) . '\'
@@ -122,7 +122,7 @@ class ProductController extends Controller
             foreach ($request->file('gallery') as $img) {
                 $name = time() . '_' . uniqid() . '.' . $img->getClientOriginalExtension();
                 $img->move($path, $name);
-                $gallery[] = 'uploads/products/' . $name;
+                $gallery[] = $name;
             }
         }
 
@@ -179,7 +179,7 @@ class ProductController extends Controller
             foreach ($request->file('gallery') as $file) {
                 $name = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
                 $file->move(public_path('uploads/products'), $name);
-                $newImages[] = 'uploads/products/' . $name;
+                $newImages[] =  $name;
             }
         }
 

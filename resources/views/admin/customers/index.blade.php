@@ -56,7 +56,7 @@
 @php
 $buttons = [];
 
-if(auth()->user()->can('customer-export')) {
+if(auth()->user()->can('customers-export')) {
     $buttons[] = [
         'extend' => 'excelHtml5',
         'text' => 'Export Excel',
