@@ -96,6 +96,8 @@
 
 @push('scripts')
 <script>
+    let selectedProducts = [];
+
     let table = $('#productTable').DataTable({
         processing: true,
         serverSide: true,
@@ -166,18 +168,55 @@
 
     $('#subcategoryFilter').change(() => table.ajax.reload());
 
-    /* CHECKBOX */
+    /* HEADER CHECK ALL */
     $('#checkAll').on('change', function() {
-        $('.product-check').prop('checked', this.checked);
+
+        if (this.checked) {
+
+            $.get("{{ route('admin.products.allIds') }}", {
+                category_id: $('#categoryFilter').val(),
+                subcategory_id: $('#subcategoryFilter').val()
+            }, function(ids) {
+
+                selectedProducts = ids.map(String);
+                $('.product-check').prop('checked', true);
+            });
+
+        } else {
+            selectedProducts = [];
+            $('.product-check').prop('checked', false);
+        }
+    });
+
+    /* SINGLE CHECKBOX */
+    $(document).on('change', '.product-check', function() {
+
+        let id = this.value;
+
+        if (this.checked) {
+            if (!selectedProducts.includes(id)) selectedProducts.push(id);
+        } else {
+            selectedProducts = selectedProducts.filter(x => x !== id);
+            $('#checkAll').prop('checked', false);
+        }
+    });
+
+    function resetSelection() {
+        selectedProducts = [];
+        $('#checkAll').prop('checked', false);
+        $('.product-check').prop('checked', false);
+    }
+    /* KEEP CHECKBOX STATE */
+    table.on('draw', function() {
+        $('.product-check').each(function() {
+            $(this).prop('checked', selectedProducts.includes(this.value));
+        });
     });
 
     /* BULK PDF */
     $('#printSelected').click(function() {
-        let ids = $('.product-check:checked').map(function() {
-            return this.value
-        }).get();
 
-        if (ids.length === 0) {
+        if (!selectedProducts.length) {
             alert('Select at least one product');
             return;
         }
@@ -187,19 +226,18 @@
                 action: "{{ route('admin.products.bulk.pdf') }}"
             })
             .append('@csrf')
-            .append(ids.map(id => `<input type="hidden" name="product_ids[]" value="${id}">`))
+            .append(selectedProducts.map(id => `<input type="hidden" name="product_ids[]" value="${id}">`))
             .append(`<input type="hidden" name="category_id" value="${$('#categoryFilter').val()}">`)
             .append(`<input type="hidden" name="subcategory_id" value="${$('#subcategoryFilter').val()}">`)
             .appendTo('body')
             .submit();
+             resetSelection();
     });
-    // bulk pdf with details
-    $('#printSelectedwithdetails').click(function() {
-        let ids = $('.product-check:checked').map(function() {
-            return this.value
-        }).get();
 
-        if (ids.length === 0) {
+    /* BULK PDF WITH DETAILS */
+    $('#printSelectedwithdetails').click(function() {
+
+        if (!selectedProducts.length) {
             alert('Select at least one product');
             return;
         }
@@ -209,101 +247,31 @@
                 action: "{{ route('admin.products-details.bulk.pdf') }}"
             })
             .append('@csrf')
-            .append(ids.map(id => `<input type="hidden" name="product_ids[]" value="${id}">`))
+            .append(selectedProducts.map(id => `<input type="hidden" name="product_ids[]" value="${id}">`))
             .append(`<input type="hidden" name="category_id" value="${$('#categoryFilter').val()}">`)
             .append(`<input type="hidden" name="subcategory_id" value="${$('#subcategoryFilter').val()}">`)
             .appendTo('body')
             .submit();
+             resetSelection();
     });
 
-    function deleteProduct(id) {
-
-        if (!confirm('Are you sure you want to delete this product?')) {
-            return;
-        }
-
-        $.ajax({
-            url: "{{ route('admin.products.destroy', ':id') }}".replace(':id', id),
-            type: "DELETE",
-            data: {
-                _token: "{{ csrf_token() }}"
-            },
-            success: function(res) {
-                toastr.success(res.message);
-                $('#productsTable').DataTable().ajax.reload(null, false);
-            },
-            error: function() {
-                toastr.error('Something went wrong!');
-            }
-        });
-    }
-
-    function getSelectedProductIds() {
-        let ids = [];
-        $('.product-check:checked').each(function() {
-            ids.push($(this).val());
-        });
-        return ids;
-    }
-
-    // Select All
-    $('#selectAll').on('change', function() {
-        $('.product-check').prop('checked', this.checked);
-    });
-
+    /* PRINT QR */
     function printQrPdf() {
-        let ids = getSelectedProductIds();
 
-        if (ids.length === 0) {
+        if (!selectedProducts.length) {
             alert('Please select at least one product');
             return;
         }
 
         let url = "{{ route('admin.products.print.qrcode') }}" +
-            "?product_ids=" + ids.join(',');
+            "?product_ids=" + selectedProducts.join(',');
 
         let win = window.open(url, '_blank');
-
         win.onload = function() {
-            win.focus();
-            win.print(); // 🔥 auto print
+            win.print();
         };
+         resetSelection();
     }
-    // list of product view gallary on popup
-
-    let images = [];
-    let currentIndex = 0;
-    const IMAGE_BASE_PATH = "{{ asset('uploads/products') }}/";
-
-    $(document).on('click', '.gallery-thumb', function () {
-
-        images = $(this).data('images');   // array of image names
-        currentIndex = $(this).data('index') || 0;
-
-        showImage();
-
-        new bootstrap.Modal(document.getElementById('galleryModal')).show();
-    });
-
-    function showImage() {
-        if (!images.length) return;
-
-        $('#sliderImage').attr(
-            'src',
-            IMAGE_BASE_PATH + images[currentIndex]
-        );
-    }
-
-    $('#nextImg').on('click', function () {
-        currentIndex = (currentIndex + 1) % images.length;
-        showImage();
-    });
-
-    $('#prevImg').on('click', function () {
-        currentIndex = (currentIndex - 1 + images.length) % images.length;
-        showImage();
-    });
-
-
 </script>
+
 @endpush

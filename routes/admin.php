@@ -174,7 +174,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         'products/print/qrcode',
         [App\Http\Controllers\Admin\ProductController::class, 'printQr']
     )->name('products.print.qrcode');
-
+    Route::get('products/all-ids', [ProductController::class, 'allIds'])->name('products.allIds');
     /*
     |--------------------------------------------------------------------------
     | ORDERS

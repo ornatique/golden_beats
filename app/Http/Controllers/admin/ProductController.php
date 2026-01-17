@@ -57,7 +57,7 @@ class ProductController extends Controller
 
                 return collect($p->gallery)->map(
                     fn($img) =>
-                    '<img src="' . asset('uploads/products/'.$img) . '"
+                    '<img src="' . asset('uploads/products/' . $img) . '"
              class="gallery-thumb rounded mr-1"
              style="width:50px;height:50px;cursor:pointer;object-fit:cover"
              data-images=\'' . json_encode($p->gallery) . '\'
@@ -332,5 +332,14 @@ class ProductController extends Controller
             ->setPaper('A4', 'portrait');
 
         return $pdf->stream('product-qr.pdf'); // auto open print dialog
+    }
+
+    public function allIds(Request $request)
+    {
+        $ids = Product::when($request->category_id, fn($q) => $q->where('category_id', $request->category_id))
+            ->when($request->subcategory_id, fn($q) => $q->where('subcategory_id', $request->subcategory_id))
+            ->pluck('id');
+
+        return response()->json($ids);
     }
 }

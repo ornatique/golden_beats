@@ -67,6 +67,8 @@
                 <th>Product Name</th>
                 <th>Category</th>
                 <th>Subcategory</th>
+                <th>Weight</th>
+                <th>Size</th>
                 <th>Product Image</th>
             </tr>
         </thead>
@@ -91,7 +93,14 @@
                 <td class="text-left">
                     {{ $product->subcategory->name ?? '-' }}
                 </td>
+                
+                 <td class="text-left">
+                    {{ $product->weight ?? '-' }}
+                </td>
 
+                <td class="text-left">
+                    {{ $product->size ?? '-' }}
+                </td>
 
                 {{-- PRODUCT IMAGES --}}
                 <td class="image-cell">

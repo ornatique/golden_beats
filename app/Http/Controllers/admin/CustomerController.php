@@ -24,10 +24,10 @@ class CustomerController extends Controller
 
     private function userListQuery(Request $request)
     {
-     
-       $query = Customer::with('roles')
-    ->where('status', request('status') === 'inactive' ? 0 : 1)
-    ->orderBy('id', 'desc');
+
+        $query = Customer::with('roles')
+            ->where('status', request('status') === 'inactive' ? 0 : 1)
+            ->orderBy('id', 'desc');
 
         // $authUser = auth()->user();
 
@@ -64,7 +64,7 @@ class CustomerController extends Controller
     {
         $users = $this->userListQuery($request);
 
-        // 🔹 Status filter
+        // 🔹 Status Filter
         if ($request->filled('status')) {
             $users->where('status', $request->status === 'active' ? 1 : 0);
         }
@@ -73,70 +73,86 @@ class CustomerController extends Controller
 
             ->addIndexColumn()
 
+            // 🔹 Profile Image
             ->addColumn('profile_image', function ($user) {
-                return $user->image
-                    ? '<img src="'.asset($user->image).'"
-                            width="80" height="80"
-                            style="object-fit:cover;border-radius:60%;">'
-                    : '<span class="badge bg-secondary">No Image</span>';
-            })
 
-            ->addColumn('contact', fn($user) => $user->number ?? '-')
+                if (!$user->image) {
+                    return '<span class="badge bg-secondary">No Image</span>';
+                }
 
-            ->addColumn('reg_date', function ($user) {
-                return $user->created_at
-                    ? $user->created_at->format('d-m-Y H:i')
-                    : '-';
-            })
-
-            ->addColumn('role', fn($user) => ucfirst($user->role))
-
-            ->addColumn('status', function ($user) {
-
-                $checked  = $user->status ? 'checked' : '';
-                $disabled = $user->role === 'admin' ? 'disabled' : '';
+                $url = asset('uploads/customer/' . $user->image);
 
                 return '
-                    <div class="custom-control custom-switch">
-                        <input type="checkbox"
-                            class="custom-control-input toggle-status"
-                            id="statusSwitch'.$user->id.'"
-                            data-id="'.$user->id.'"
-                            '.$checked.' '.$disabled.'>
-                        <label class="custom-control-label"
-                            for="statusSwitch'.$user->id.'"></label>
-                    </div>
-                ';
+                <img src="' . $url . '"
+                     class="profile-thumb"
+                     data-src="' . $url . '"
+                     style="width:80px;height:80px;object-fit:cover;border-radius:50%;cursor:pointer"
+                     title="Click to view">
+            ';
             })
 
-            ->addColumn('action', function ($user) {
+            // 🔹 Contact
+            ->addColumn('contact', fn($u) => $u->number ?? '-')
 
-                $buttons = '';
+            // 🔹 Registration Date
+            ->addColumn(
+                'reg_date',
+                fn($u) => $u->created_at
+                    ? $u->created_at->format('d-m-Y h:i A')
+                    : '-'
+            )
+
+            // 🔹 Role
+            ->addColumn('role', fn($u) => ucfirst($u->role))
+
+            // 🔹 Status Toggle
+            ->addColumn('status', function ($u) {
+
+                $checked  = $u->status ? 'checked' : '';
+                $disabled = $u->role === 'admin' ? 'disabled' : '';
+
+                return '
+                <div class="custom-control custom-switch">
+                    <input type="checkbox"
+                           class="custom-control-input toggle-status"
+                           id="statusSwitch' . $u->id . '"
+                           data-id="' . $u->id . '"
+                           ' . $checked . ' ' . $disabled . '>
+                    <label class="custom-control-label"
+                           for="statusSwitch' . $u->id . '"></label>
+                </div>
+            ';
+            })
+
+            // 🔹 Actions (Permission Based)
+            ->addColumn('action', function ($u) {
+
+                $html = '';
 
                 if (auth()->user()->can('customers-edit')) {
-                    $buttons .= '
-                        <a href="'.route('admin.customers.edit',$user->id).'"
-                        class="btn btn-sm btn-primary mr-1">
-                        Edit
-                        </a>
-                    ';
+                    $html .= '
+                    <a href="' . route('admin.customers.edit', $u->id) . '"
+                       class="btn btn-sm btn-primary mr-1">
+                       Edit
+                    </a>
+                ';
                 }
 
                 if (auth()->user()->can('customers-delete')) {
-                    $buttons .= '
-                        <form method="POST"
-                            action="'.route('admin.customers.destroy',$user->id).'"
-                            style="display:inline;">
-                            '.csrf_field().method_field('DELETE').'
-                            <button class="btn btn-sm btn-danger"
-                                    onclick="return confirm(\'Are you sure?\')">
-                                Delete
-                            </button>
-                        </form>
-                    ';
+                    $html .= '
+                    <form method="POST"
+                          action="' . route('admin.customers.destroy', $u->id) . '"
+                          style="display:inline;">
+                        ' . csrf_field() . method_field('DELETE') . '
+                        <button class="btn btn-sm btn-danger"
+                                onclick="return confirm(\'Delete this customer?\')">
+                            Delete
+                        </button>
+                    </form>
+                ';
                 }
 
-                return $buttons ?: '-';
+                return $html ?: '-';
             })
 
             ->rawColumns(['profile_image', 'status', 'action'])
@@ -253,9 +269,9 @@ class CustomerController extends Controller
         }
 
         // 🏷 Category (ONLY if customer)
-       
-            $data['category_ids'] = json_encode($request->category_ids);
-           
+
+        $data['category_ids'] = json_encode($request->category_ids);
+
 
         // 🔄 Update user
         $customer->update($data);
@@ -264,8 +280,7 @@ class CustomerController extends Controller
         $customer->syncRoles([$request->role]);
 
         return redirect()
-            ->route('admin.customers.index', [
-            ])
+            ->route('admin.customers.index', [])
             ->with('success', 'Customers updated successfully');
     }
 
@@ -294,7 +309,7 @@ class CustomerController extends Controller
 
     public function updateStatus(Request $request)
     {
-   
+
         $request->validate([
             'id' => 'required|exists:customers,id',
             'status' => 'required|boolean',

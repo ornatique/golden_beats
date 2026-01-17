@@ -166,12 +166,11 @@
 
                                 <div class="mt-2">
                                     <img id="imagePreview"
-                                         src="{{ asset($customer->image) }}"
+                                         src="{{ asset('uploads/customer/' .$customer->image) }}"
                                          style="width:120px;height:120px;border-radius:6px;">
                                 </div>
                             </div>
                         </div>
-                        
                         {{-- Categories --}}
                         <div class="col-md-6">
                                 

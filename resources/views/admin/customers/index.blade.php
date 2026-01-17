@@ -22,7 +22,6 @@
         <div class="row mb-2 ">
             <div class="col-md-3 text-right">
                 <select id="statusFilter" class="form-control">
-                    <option value="">Select Customers</option>
                     <option value="active" {{ request('status')=='active' ? 'selected' : '' }}>
                         Active Customers
                     </option>
@@ -51,63 +50,143 @@
         </table>
     </div>
 </div>
-@endsection
-@push('scripts')
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Profile Image</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <div class="modal-body text-center">
+                <img id="modalImage"
+                    style="max-width:100%;max-height:70vh;transform:rotate(0deg)">
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="rotateLeft">⟲ Rotate Left</button>
+                <button class="btn btn-secondary" id="rotateRight">⟳ Rotate Right</button>
+                <button class="btn btn-danger" data-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 @php
-$buttons = [];
-
-if(auth()->user()->can('customers-export')) {
-    $buttons[] = [
-        'extend' => 'excelHtml5',
-        'text' => 'Export Excel',
-        'className' => 'btn btn-primary',
-        'title' => 'Customer List',
-        'exportOptions' => [
-            'columns' => [0,1,3,4,5,6,7,8]
-        ],
-    ];
-}
+$canExport = auth()->user()->can('customers-export');
 @endphp
+@endsection
+
+@push('scripts')
+
 <script>
-    $(document).ready(function() {
+    let buttons = [];
 
-        let params = new URLSearchParams(window.location.search);
-       let customersTable = $('#customers-table').DataTable({
-
-    processing: true,
-    serverSide: true,
-
-    dom: '<"row mb-3"<"col-md-6"l><"col-md-6 text-end"B>>frtip',
-
-    buttons: {!! json_encode($buttons) !!},
-
-    ajax: {
-        url: "{{ route('admin.customers.data') }}",
-        data: function (d) {
-            d.only   = new URLSearchParams(window.location.search).get('only');
-            d.status = new URLSearchParams(window.location.search).get('status');
+    @if($canExport)
+    buttons.push({
+        extend: 'excelHtml5',
+        className: 'd-none', // hidden real exporter
+        title: 'Customer List',
+        exportOptions: {
+            columns: [0, 1, 3, 4, 5, 6, 7, 8]
         }
-    },
-
-    order: [[0, 'asc']],
-
-    columns: [
-        { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
-        { data: 'name', name: 'name' },
-        { data: 'profile_image', name: 'profile_image', orderable: false, searchable: false },
-        { data: 'email', name: 'email' },
-        { data: 'number', name: 'contact' },
-        { data: 'state', name: 'state' },
-        { data: 'city', name: 'city' },
-        { data: 'reg_date', name: 'reg_date' },
-        { data: 'role', name: 'role' },
-        { data: 'status', name: 'status', orderable: false, searchable: false },
-        { data: 'action', name: 'action', orderable: false, searchable: false }
-    ]
-});
-
-
+    }, {
+        text: 'Export Excel',
+        className: 'btn btn-primary',
+        action: exportAllExcel // <-- REAL FUNCTION
     });
+    @endif
+
+
+    let customersTable = $('#customers-table').DataTable({
+        processing: true,
+        serverSide: true,
+        dom: '<"row mb-3"<"col-md-6"l><"col-md-6 text-end"B>>frtip',
+        buttons: buttons,
+
+        ajax: {
+            url: "{{ route('admin.customers.data') }}",
+            data: function(d) {
+                d.only = new URLSearchParams(window.location.search).get('only');
+                d.status = new URLSearchParams(window.location.search).get('status');
+            }
+        },
+
+        order: [
+            [0, 'asc']
+        ],
+        columns: [{
+                data: 'DT_RowIndex',
+                orderable: false,
+                searchable: false
+            },
+            {
+                data: 'name'
+            },
+            {
+                data: 'profile_image',
+                orderable: false,
+                searchable: false
+            },
+            {
+                data: 'email'
+            },
+            {
+                data: 'contact'
+            },
+            {
+                data: 'state'
+            },
+            {
+                data: 'city'
+            },
+            {
+                data: 'reg_date'
+            },
+            {
+                data: 'role'
+            },
+            {
+                data: 'status',
+                orderable: false,
+                searchable: false
+            },
+            {
+                data: 'action',
+                orderable: false,
+                searchable: false
+            }
+        ]
+    });
+
+    function exportAllExcel(e, dt, node, config) {
+
+        let oldStart = dt.settings()[0]._iDisplayStart;
+
+        dt.one('preXhr', function(e, s, data) {
+            data.start = 0;
+            data.length = 2147483647; // all rows
+        });
+
+        dt.one('draw', function() {
+
+            dt.button(0).trigger(); // trigger hidden excelHtml5
+
+            dt.one('preXhr', function(e, s, data) {
+                data.start = oldStart;
+                data.length = dt.page.len();
+            });
+
+            setTimeout(function() {
+                dt.ajax.reload(null, false);
+            }, 500);
+        });
+
+        dt.ajax.reload();
+    }
+    
 </script>
 <script>
     $(document).on('change', '.toggle-status', function() {
@@ -146,6 +225,25 @@ if(auth()->user()->can('customers-export')) {
 
         window.history.pushState({}, '', url);
         $('#customers-table').DataTable().ajax.reload();
+    });
+
+    let angle = 0;
+
+    $(document).on('click', '.profile-thumb', function() {
+        let src = $(this).data('src');
+        angle = 0;
+        $('#modalImage').attr('src', src).css('transform', 'rotate(0deg)');
+        $('#imageModal').modal('show');
+    });
+
+    $('#rotateLeft').on('click', function() {
+        angle -= 90;
+        $('#modalImage').css('transform', 'rotate(' + angle + 'deg)');
+    });
+
+    $('#rotateRight').on('click', function() {
+        angle += 90;
+        $('#modalImage').css('transform', 'rotate(' + angle + 'deg)');
     });
 </script>
 
