@@ -8,6 +8,7 @@ use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\File;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -49,6 +50,7 @@ class AuthController extends Controller
             'image'    => $imagePath,
             'status'   => 0,
             'category_ids' => json_encode($request->category_ids),
+            'device_token'=>$request->device_token
         ]);
 
         $token = $customer->createToken('customer-token')->plainTextToken;
@@ -60,44 +62,113 @@ class AuthController extends Controller
         ], 201);
     }
 
-        public function login(Request $request)
+    public function login(Request $request)
     {
-        $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required'
-        ]);
+    Log::info('LOGIN REQUEST', $request->all());
 
-        $customer = Customer::where('email', $request->email)->first();
+    $validator = Validator::make($request->all(), [
+        'number'       => 'required',
+        'password'     => 'required',
+        'device_token' => 'required',
+    ]);
 
-        if (!$customer || !Hash::check($request->password, $customer->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid credentials'
-            ], 401);
-        }
-
-        if ($customer->status == 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Account disabled'
-            ], 403);
-        }
-
-        $token = $customer->createToken('customer-token')->plainTextToken;
-
+    if ($validator->fails()) {
         return response()->json([
-            'success' => true,
-            'token'   => $token,
-            'data'    => $customer
-        ]);
+            'status'  => '0',
+            'message' => 'Validation failed',
+            'errors'  => $validator->errors(),
+        ], 422);
     }
+
+    // ✅ FETCH CUSTOMER (NOT USER)
+    $customer = Customer::where('number', $request->number)->first();
+
+    if (!$customer) {
+        return response()->json([
+            'status'  => '0',
+            'message' => 'Customer not found. Please contact support.',
+        ], 200);
+    }
+
+    if ($customer->status != 1) {
+        return response()->json([
+            'status'  => '0',
+            'message' => 'Account inactive. Please contact support.',
+        ], 200);
+    }
+
+    if (!Hash::check($request->password, $customer->password)) {
+        return response()->json([
+            'status'  => '0',
+            'message' => 'Invalid login details',
+        ], 401);
+    }
+
+    /**
+     * ✅ SINGLE DEVICE LOGIN LOGIC
+     */
+    if (!$customer->device_token) {
+        $customer->device_token = $request->device_token;
+    } elseif ($customer->device_token !== $request->device_token) {
+        return response()->json([
+            'status'  => '0',
+            'message' => 'Already logged in from another device.',
+        ], 200);
+    }
+
+    /**
+     * ✅ SAVE OPTIONAL DATA
+     */
+    $customer->fcm_token   = $request->fcm_token ?? null;
+    $customer->device_type = $request->device_type ?? null;
+    $customer->save();
+
+    /**
+     * 🔥 IMPORTANT: DELETE OLD TOKENS
+     */
+    $customer->tokens()->delete();
+
+    /**
+     * ✅ CREATE NEW TOKEN
+     */
+    $token = $customer->createToken('customer-token')->plainTextToken;
+
+    return response()->json([
+        'status'        => '1',
+        'message'       => 'Login successful',
+        'token'         => $token,
+        'image_url'     => asset('public/assets/images/users'),
+        'device_token'  => $customer->device_token,
+        'data'          => $customer,
+    ], 200);
+}
 
     public function profile(Request $request)
     {
+    $token = $request->bearerToken();
+
+    if (!$token) {
         return response()->json([
-            'success' => true,
-            'data' => $request->user()
-        ]);
+            'success' => false,
+            'message' => 'Token missing'
+        ], 401);
     }
 
+    $accessToken = PersonalAccessToken::findToken($token);
+
+    if (!$accessToken || !$accessToken->tokenable instanceof \App\Models\Customer) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid token'
+        ], 401);
+    }
+
+    // ✅ IGNORE request->id COMPLETELY
+    $customer = $accessToken->tokenable;
+
+    return response()->json([
+        'success' => true,
+        'data' => $customer
+    ]);
+}
 }
