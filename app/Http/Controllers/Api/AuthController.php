@@ -2,173 +2,421 @@
 
 namespace App\Http\Controllers\Api;
 
-
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\PersonalAccessToken;
+use App\Models\Category;
+use App\Models\BannerAd;
+use App\Models\PopupBannerAd;
+use App\Models\Product;
+use App\Models\Subcategory;
 
 class AuthController extends Controller
 {
+    /* =====================================================
+     | REGISTER
+     ===================================================== */
     public function register(Request $request)
     {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:customers',
-            'password' => 'required|min:6',
-            'number'   => 'required',
-            'state'    => 'required',
-            'city'     => 'required',
-            'image'    => 'nullable|image',
-            'category_ids'   => 'required|array',
+        $validator = Validator::make($request->all(), [
+            'name'         => 'required|string|max:255',
+            'email'        => 'required|email|unique:customers,email',
+            'number'       => 'required|unique:customers,number',
+            'password'     => 'required|min:6',
+            'state'        => 'required',
+            'city'         => 'required',
+            'image'        => 'nullable|image',
+            'category_ids' => 'required|array',
         ]);
 
-        $imagePath = null;
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'code'    => 422,
+                'error'   => 'VALIDATION_ERROR',
+                'message' => 'Validation failed',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
 
+        /* Image Upload */
+        $imagePath = null;
         if ($request->hasFile('image')) {
             $destination = public_path('uploads/customer');
             if (!File::exists($destination)) {
                 File::makeDirectory($destination, 0755, true);
             }
-
-            $image = $request->file('image');
-            $name  = time().'_'.uniqid().'.'.$image->getClientOriginalExtension();
-            $image->move($destination, $name);
-
-            $imagePath = $name;
+            $imageName = time().'_'.uniqid().'.'.$request->image->extension();
+            $request->image->move($destination, $imageName);
+            $imagePath = $imageName;
         }
 
+        /* Create Customer */
         $customer = Customer::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-            'number'   => $request->number,
-            'state'    => $request->state,
-            'city'     => $request->city,
-            'image'    => $imagePath,
-            'status'   => 0,
+            'name'         => $request->name,
+            'email'        => $request->email,
+            'password'     => Hash::make($request->password),
+            'number'       => $request->number,
+            'state'        => $request->state,
+            'city'         => $request->city,
+            'image'        => $imagePath,
+            'status'       => 0,
             'category_ids' => json_encode($request->category_ids),
-            'device_token'=>$request->device_token
+            'device_key' => $request->device_key,
+            'fcm_token' => $request->fcm_token,
+            'device_type' => $request->device_type
         ]);
 
         $token = $customer->createToken('customer-token')->plainTextToken;
 
         return response()->json([
             'success' => true,
+            'code'    => 201,
+            'message' => 'Registration successful',
             'token'   => $token,
-            'data'    => $customer
+            'data'    => $customer,
         ], 201);
     }
 
+    /* =====================================================
+     | LOGIN
+     ===================================================== */
     public function login(Request $request)
     {
-    Log::info('LOGIN REQUEST', $request->all());
+        $validator = Validator::make($request->all(), [
+            'number'   => 'required',
+            'password' => 'required',
+            // 'device_key' => 'required|string',
+        ]);
 
-    $validator = Validator::make($request->all(), [
-        'number'       => 'required',
-        'password'     => 'required',
-        'device_token' => 'required',
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'code'    => 422,
+                'error'   => 'VALIDATION_ERROR',
+                'message' => 'Validation failed',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $customer = Customer::where('number', $request->number)->first();
+
+        if (!$customer) {
+            return response()->json([
+                'success' => false,
+                'code'    => 404,
+                'error'   => 'CUSTOMER_NOT_FOUND',
+                'message' => 'Customer not found',
+            ], 404);
+        }
+
+        if ($customer->status != 1) {
+            return response()->json([
+                'success' => false,
+                'code'    => 403,
+                'error'   => 'ACCOUNT_INACTIVE',
+                'message' => 'Account is inactive',
+            ], 403);
+        }
+
+        if (!Hash::check($request->password, $customer->password)) {
+            return response()->json([
+                'success' => false,
+                'code'    => 401,
+                'error'   => 'INVALID_CREDENTIALS',
+                'message' => 'Invalid login credentials',
+            ], 401);
+        }
+
+        /* Single Device Login */
+        if (!$customer->device_key) {
+            // first time login
+            $customer->device_key = $request->device_key;
+            $customer->save();
+        } elseif ($customer->device_key !== $request->device_key) {
+            return response()->json([
+                'success' => false,
+                'code'    => 409,
+                'error'   => 'DEVICE_CONFLICT',
+                'message' => 'Already logged in on another device',
+            ], 409);
+        }
+
+        $customer->device_key = $request->device_key;
+        $customer->fcm_token    = $request->fcm_token;
+        $customer->device_type  = $request->device_type;
+        $customer->save();
+
+        $customer->tokens()->delete();
+        $token = $customer->createToken('customer-token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'code'    => 200,
+            'message' => 'Login successful',
+            'token'   => $token,
+            'data'    => $customer,
+        ]);
+    }
+
+    /* =====================================================
+     | PROFILE
+     ===================================================== */
+    public function profile(Request $request)
+    {
+        $token = $request->bearerToken();
+        $accessToken = PersonalAccessToken::findToken($token);
+
+        if (!$accessToken) {
+            return response()->json([
+                'success' => false,
+                'code'    => 401,
+                'error'   => 'UNAUTHORIZED',
+                'message' => 'Invalid or missing token',
+            ], 401);
+        }
+
+        return response()->json([
+            'success' => true,
+            'code'    => 200,
+            'message' => 'Profile fetched successfully',
+            'type'    => class_basename($accessToken->tokenable),
+            'data'    => $accessToken->tokenable,
+        ]);
+    }
+
+    /* =====================================================
+     | LOGOUT
+     ===================================================== */
+    public function logout(Request $request)
+    {
+        $accessToken = PersonalAccessToken::findToken($request->bearerToken());
+
+        if (!$accessToken) {
+            return response()->json([
+                'success' => false,
+                'code'    => 401,
+                'error'   => 'INVALID_TOKEN',
+                'message' => 'Token invalid',
+            ], 401);
+        }
+
+        $accessToken->delete();
+
+        return response()->json([
+            'success' => true,
+            'code'    => 200,
+            'message' => 'Logout successful',
+        ]);
+    }
+
+    /* =====================================================
+     | STATES & CITIES
+     ===================================================== */
+    public function states()
+    {
+        return response()->json([
+            'success' => true,
+            'code'    => 200,
+            'data'    => [ /* states list */ ],
+        ]);
+    }
+
+    public function citiesByState(Request $request)
+    {
+        if (!$request->state) {
+            return response()->json([
+                'success' => false,
+                'code'    => 422,
+                'error'   => 'STATE_REQUIRED',
+                'message' => 'State is required',
+            ], 422);
+        }
+
+        $response = Http::withoutVerifying()->post(
+            'https://countriesnow.space/api/v0.1/countries/state/cities',
+            ['country' => 'India', 'state' => $request->state]
+        );
+
+        if (!$response->successful()) {
+            return response()->json([
+                'success' => false,
+                'code'    => 500,
+                'error'   => 'CITY_FETCH_FAILED',
+                'message' => 'Unable to fetch cities',
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'code'    => 200,
+            'data'    => $response->json('data'),
+        ]);
+    }
+    public function dashboard(Request $request)
+    {
+        /* ---------------------------------
+     | 1. Validate Token
+     --------------------------------- */
+        $token = $request->bearerToken();
+
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'code'    => 401,
+                'error'   => 'TOKEN_MISSING',
+                'message' => 'Authorization token missing',
+            ], 401);
+        }
+
+        $accessToken = PersonalAccessToken::findToken($token);
+
+        if (!$accessToken || !($accessToken->tokenable instanceof \App\Models\Customer)) {
+            return response()->json([
+                'success' => false,
+                'code'    => 401,
+                'error'   => 'UNAUTHORIZED',
+                'message' => 'Invalid token',
+            ], 401);
+        }
+
+        /** @var \App\Models\Customer $customer */
+        $customer = $accessToken->tokenable;
+
+        /* ---------------------------------
+     | 2. Fetch Categories from category_ids
+     --------------------------------- */
+        $categoryIds = [];
+
+        if (!empty($customer->category_ids)) {
+            $categoryIds = json_decode($customer->category_ids, true) ?? [];
+        }
+
+        $categories = Category::whereIn('id', $categoryIds)
+            ->get();
+
+        /* ---------------------------------
+     | 3. Fetch Banner Ads (ALL)
+     --------------------------------- */
+        $bannerAds = BannerAd::orderBy('id', 'desc')
+            ->get();
+         $popupBannerAd = PopupBannerAd::orderBy('id', 'desc')
+            ->get();
+        /* ---------------------------------
+     | 4. Final Response
+     --------------------------------- */
+        return response()->json([
+            'success' => true,
+            'code'    => 200,
+            'message' => 'Dashboard data fetched successfully',
+            'data'    => [
+                'customer'   => $customer,
+                'categories' => $categories,
+                'banner_ads' => $bannerAds,
+                'PopupBannerAd' => $popupBannerAd,
+            ]
+        ], 200);
+    }
+    
+
+public function subcategoriesByCategory(Request $request)
+{
+    $request->validate([
+        'category_id' => 'required|exists:categories,id',
     ]);
 
-    if ($validator->fails()) {
-        return response()->json([
-            'status'  => '0',
-            'message' => 'Validation failed',
-            'errors'  => $validator->errors(),
-        ], 422);
-    }
-
-    // ✅ FETCH CUSTOMER (NOT USER)
-    $customer = Customer::where('number', $request->number)->first();
-
-    if (!$customer) {
-        return response()->json([
-            'status'  => '0',
-            'message' => 'Customer not found. Please contact support.',
-        ], 200);
-    }
-
-    if ($customer->status != 1) {
-        return response()->json([
-            'status'  => '0',
-            'message' => 'Account inactive. Please contact support.',
-        ], 200);
-    }
-
-    if (!Hash::check($request->password, $customer->password)) {
-        return response()->json([
-            'status'  => '0',
-            'message' => 'Invalid login details',
-        ], 401);
-    }
-
-    /**
-     * ✅ SINGLE DEVICE LOGIN LOGIC
-     */
-    if (!$customer->device_token) {
-        $customer->device_token = $request->device_token;
-    } elseif ($customer->device_token !== $request->device_token) {
-        return response()->json([
-            'status'  => '0',
-            'message' => 'Already logged in from another device.',
-        ], 200);
-    }
-
-    /**
-     * ✅ SAVE OPTIONAL DATA
-     */
-    $customer->fcm_token   = $request->fcm_token ?? null;
-    $customer->device_type = $request->device_type ?? null;
-    $customer->save();
-
-    /**
-     * 🔥 IMPORTANT: DELETE OLD TOKENS
-     */
-    $customer->tokens()->delete();
-
-    /**
-     * ✅ CREATE NEW TOKEN
-     */
-    $token = $customer->createToken('customer-token')->plainTextToken;
+    $subcategories = Subcategory::where('category_id', $request->category_id)
+        ->orderBy('name')
+        ->get();
 
     return response()->json([
-        'status'        => '1',
-        'message'       => 'Login successful',
-        'token'         => $token,
-        'image_url'     => asset('public/assets/images/users'),
-        'device_token'  => $customer->device_token,
-        'data'          => $customer,
+        'success' => true,
+        'code'    => 200,
+        'message' => 'Subcategories fetched successfully',
+        'data'    => $subcategories,
     ], 200);
 }
 
-    public function profile(Request $request)
-    {
+public function products(Request $request)
+{
+    /* ---------------------------------
+     | 1. Validate Token
+     --------------------------------- */
     $token = $request->bearerToken();
 
     if (!$token) {
         return response()->json([
             'success' => false,
-            'message' => 'Token missing'
+            'code'    => 401,
+            'error'   => 'TOKEN_MISSING',
+            'message' => 'Authorization token missing',
         ], 401);
     }
 
     $accessToken = PersonalAccessToken::findToken($token);
 
-    if (!$accessToken || !$accessToken->tokenable instanceof \App\Models\Customer) {
+    if (!$accessToken || !($accessToken->tokenable instanceof \App\Models\Customer)) {
         return response()->json([
             'success' => false,
-            'message' => 'Invalid token'
+            'code'    => 401,
+            'error'   => 'UNAUTHORIZED',
+            'message' => 'Invalid token',
         ], 401);
     }
 
-    // ✅ IGNORE request->id COMPLETELY
+    /** @var Customer $customer */
     $customer = $accessToken->tokenable;
 
+    /* ---------------------------------
+     | 2. Validate Request
+     --------------------------------- */
+    $request->validate([
+        'category_id'    => 'required|integer|exists:categories,id',
+        'subcategory_id' => 'nullable|integer|exists:subcategories,id',
+    ]);
+
+    /* ---------------------------------
+     | 3. Check Customer Allowed Categories
+     --------------------------------- */
+    $allowedCategoryIds = json_decode($customer->category_ids, true) ?? [];
+
+    if (!in_array($request->category_id, $allowedCategoryIds)) {
+        return response()->json([
+            'success' => false,
+            'code'    => 403,
+            'error'   => 'CATEGORY_NOT_ALLOWED',
+            'message' => 'You are not allowed to access this category',
+        ], 403);
+    }
+
+    /* ---------------------------------
+     | 4. Fetch Products
+     --------------------------------- */
+    $productsQuery = Product::where('category_id', $request->category_id);
+
+    if ($request->filled('subcategory_id')) {
+        $productsQuery->where('subcategory_id', $request->subcategory_id);
+    }
+
+    $products = $productsQuery
+        ->orderBy('id', 'desc')
+        ->get();
+
+    /* ---------------------------------
+     | 5. Response
+     --------------------------------- */
     return response()->json([
         'success' => true,
-        'data' => $customer
-    ]);
+        'code'    => 200,
+        'message' => 'Products fetched successfully',
+        'data'    => $products,
+    ], 200);
 }
+
 }

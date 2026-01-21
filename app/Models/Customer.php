@@ -14,6 +14,11 @@ class Customer extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable,HasApiTokens;
     use HasRoles;
+    protected $table = 'customers';
+    protected $appends = ['image_url'];
+
+    // 🔥 REQUIRED for Spatie + Sanctum
+  
     /**
      * The attributes that are mass assignable.
      *
@@ -62,5 +67,15 @@ class Customer extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    
+
+    public function getImageUrlAttribute()
+    {
+        if (!$this->image) {
+            return null;
+        }
+
+        return asset('uploads/customer/' . $this->image);
     }
 }

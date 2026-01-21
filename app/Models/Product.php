@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
+    protected $appends = ['image_url'];
     protected $fillable = [
         'name','category_id','subcategory_id','number','size','hole_size',
         'gross_weight','less_weight','weight','quantity','gallery',
@@ -26,4 +27,15 @@ class Product extends Model
     {
         return $this->belongsTo(Subcategory::class);
     }
+    public function getImageUrlAttribute()
+{
+    if (empty($this->gallery) || !is_array($this->gallery)) {
+        return [];
+    }
+
+    return array_map(function ($image) {
+        return asset('uploads/products/' . $image);
+    }, $this->gallery);
+}
+
 }

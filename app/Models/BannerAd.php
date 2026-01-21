@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class BannerAd extends Model
 {
     use HasFactory;
-
+    protected $appends = ['image_url'];
     protected $fillable = [
         'product_id',
         'category_id',
@@ -27,5 +27,13 @@ public function subcategory() {
 public function product() {
     return $this->belongsTo(Product::class);
 }
+
+
+    public function getImageUrlAttribute()
+    {
+        return $this->image
+            ? asset( $this->image)
+            : null;
+    }
 
 }
