@@ -11,7 +11,7 @@
             <thead>
             <tr>
                 <th>#</th>
-                <th>Customer Nmae</th>
+                <th>Customer Name</th>
                 <th>Image</th>
                 <th>Remarks</th>
                 <th>Status</th>
@@ -45,14 +45,17 @@ function deleteOrder(id){
     if(!confirm('Delete this order?')) return;
 
     $.ajax({
-        url: "{{ url('admin/custom-orders') }}/"+id,
+        url: "{{ url('admin/custom-orders') }}/" + id,
         type: "DELETE",
-        data: {_token:"{{ csrf_token() }}"},
+        data: {
+            _token: "{{ csrf_token() }}"
+        },
         success: function(res){
             $('#customOrdersTable').DataTable().ajax.reload();
         }
     });
 }
+
 
 $(document).on('change', '.order-status', function () {
 

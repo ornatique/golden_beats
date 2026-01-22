@@ -18,36 +18,36 @@ class CustomOrderController extends Controller
 
     public function data()
     {
-        $orders = CustomOrder::with('user')->latest();
+        $orders = CustomOrder::with('customer')->latest();
 
         return DataTables::of($orders)
             ->addIndexColumn()
 
-            // ✅ Capitalize first letter of username
+            // ✅ Customer name
             ->addColumn('user_name', function ($o) {
-                return $o->user ? ucfirst($o->user->name) : '-';
+                return $o->customer ? ucfirst($o->customer->name) : '-';
             })
 
-            // 🔥 ENABLE SEARCH ON USER NAME
+            // 🔍 Search on customer name
             ->filterColumn('user_name', function ($query, $keyword) {
-                $query->whereHas('user', function ($q) use ($keyword) {
+                $query->whereHas('customer', function ($q) use ($keyword) {
                     $q->where('name', 'like', "%{$keyword}%");
                 });
             })
 
+            // 🖼 Image
             ->addColumn('image', function ($o) {
                 return $o->image
                     ? '<img src="' . asset($o->image) . '" width="50">'
                     : '-';
             })
 
-            // ✅ STATUS DROPDOWN
+            // 🔄 Status dropdown
             ->addColumn('status', function ($o) {
 
                 $statuses = ['Pending', 'Approval', 'Making', 'Finishing', 'Done'];
 
-                $html = '<select class="form-control form-control-sm order-status"
-                        data-id="' . $o->id . '">';
+                $html = '<select class="form-control form-control-sm order-status" data-id="' . $o->id . '">';
 
                 foreach ($statuses as $status) {
                     $selected = $o->status === $status ? 'selected' : '';
@@ -58,52 +58,36 @@ class CustomOrderController extends Controller
 
                 return $html;
             })
+
+            // 📅 Date
             ->editColumn('created_at', function ($o) {
-                return Carbon::parse($o->created_at)->format('d M Y h:i A');
+                return \Carbon\Carbon::parse($o->created_at)->format('d M Y h:i A');
             })
+
+            // ⚙ Actions
             ->addColumn('action', function ($o) {
 
                 $html = '';
 
-                // ✏️ EDIT
                 if (auth()->user()->can('custom-order-edit')) {
-                    $html .= '
-            <a href="' . route('admin.custom-orders.edit', $o->id) . '"
-               class="btn btn-primary btn-sm mr-1">
-                Edit
-            </a>
-        ';
+                    $html .= '<a href="' . route('admin.custom-orders.edit', $o->id) . '" class="btn btn-primary btn-sm mr-1">Edit</a>';
                 }
 
-                // 🖨 PRINT
                 if (auth()->user()->can('custom-order-print')) {
-                    $html .= '
-            <a href="' . route('admin.custom-orders.print', $o->id) . '"
-               class="btn btn-success btn-sm mr-1"
-               target="_blank">
-                Print
-            </a>
-        ';
+                    $html .= '<a href="' . route('admin.custom-orders.print', $o->id) . '" class="btn btn-success btn-sm mr-1" target="_blank">Print</a>';
                 }
 
-                // 🗑 DELETE
                 if (auth()->user()->can('custom-order-delete')) {
-                    $html .= '
-            <button class="btn btn-danger btn-sm"
-                onclick="deleteOrder(' . $o->id . ')">
-                Delete
-            </button>
-        ';
+                    $html .= '<button class="btn btn-danger btn-sm" onclick="deleteOrder(' . $o->id . ')">Delete</button>';
                 }
 
                 return $html ?: '-';
             })
-            ->rawColumns(['action'])
-
 
             ->rawColumns(['image', 'status', 'action'])
             ->make(true);
     }
+
 
 
     public function edit(CustomOrder $customOrder)
@@ -146,13 +130,13 @@ class CustomOrderController extends Controller
     }
 
 
-    public function destroy(CustomOrder $customOrder)
+    public function destroy($id)
     {
-        $customOrder->delete();
+        CustomOrder::findOrFail($id)->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Deleted successfully'
+            'message' => 'Order deleted successfully'
         ]);
     }
 

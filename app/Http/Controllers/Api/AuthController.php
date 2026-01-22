@@ -16,6 +16,7 @@ use App\Models\BannerAd;
 use App\Models\PopupBannerAd;
 use App\Models\Product;
 use App\Models\Subcategory;
+use App\Models\Wishlist;
 
 class AuthController extends Controller
 {
@@ -52,7 +53,7 @@ class AuthController extends Controller
             if (!File::exists($destination)) {
                 File::makeDirectory($destination, 0755, true);
             }
-            $imageName = time().'_'.uniqid().'.'.$request->image->extension();
+            $imageName = time() . '_' . uniqid() . '.' . $request->image->extension();
             $request->image->move($destination, $imageName);
             $imagePath = $imageName;
         }
@@ -224,7 +225,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'code'    => 200,
-            'data'    => [ /* states list */ ],
+            'data'    => [ /* states list */],
         ]);
     }
 
@@ -306,7 +307,7 @@ class AuthController extends Controller
      --------------------------------- */
         $bannerAds = BannerAd::orderBy('id', 'desc')
             ->get();
-         $popupBannerAd = PopupBannerAd::orderBy('id', 'desc')
+        $popupBannerAd = PopupBannerAd::orderBy('id', 'desc')
             ->get();
         /* ---------------------------------
      | 4. Final Response
@@ -323,100 +324,151 @@ class AuthController extends Controller
             ]
         ], 200);
     }
-    
 
-public function subcategoriesByCategory(Request $request)
-{
-    $request->validate([
-        'category_id' => 'required|exists:categories,id',
-    ]);
 
-    $subcategories = Subcategory::where('category_id', $request->category_id)
-        ->orderBy('name')
-        ->get();
+    public function subcategoriesByCategory(Request $request)
+    {
+        $request->validate([
+            'category_id' => 'required|exists:categories,id',
+        ]);
 
-    return response()->json([
-        'success' => true,
-        'code'    => 200,
-        'message' => 'Subcategories fetched successfully',
-        'data'    => $subcategories,
-    ], 200);
-}
+        $subcategories = Subcategory::where('category_id', $request->category_id)
+            ->orderBy('name')
+            ->get();
 
-public function products(Request $request)
-{
-    /* ---------------------------------
+        return response()->json([
+            'success' => true,
+            'code'    => 200,
+            'message' => 'Subcategories fetched successfully',
+            'data'    => $subcategories,
+        ], 200);
+    }
+
+    public function products(Request $request)
+    {
+        /* ---------------------------------
      | 1. Validate Token
      --------------------------------- */
-    $token = $request->bearerToken();
+        $token = $request->bearerToken();
 
-    if (!$token) {
-        return response()->json([
-            'success' => false,
-            'code'    => 401,
-            'error'   => 'TOKEN_MISSING',
-            'message' => 'Authorization token missing',
-        ], 401);
-    }
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'code'    => 401,
+                'error'   => 'TOKEN_MISSING',
+                'message' => 'Authorization token missing',
+            ], 401);
+        }
 
-    $accessToken = PersonalAccessToken::findToken($token);
+        $accessToken = PersonalAccessToken::findToken($token);
 
-    if (!$accessToken || !($accessToken->tokenable instanceof \App\Models\Customer)) {
-        return response()->json([
-            'success' => false,
-            'code'    => 401,
-            'error'   => 'UNAUTHORIZED',
-            'message' => 'Invalid token',
-        ], 401);
-    }
+        if (!$accessToken || !($accessToken->tokenable instanceof Customer)) {
+            return response()->json([
+                'success' => false,
+                'code'    => 401,
+                'error'   => 'UNAUTHORIZED',
+                'message' => 'Invalid token',
+            ], 401);
+        }
 
-    /** @var Customer $customer */
-    $customer = $accessToken->tokenable;
+        /** @var Customer $customer */
+        $customer = $accessToken->tokenable;
 
-    /* ---------------------------------
+        /* ---------------------------------
      | 2. Validate Request
      --------------------------------- */
-    $request->validate([
-        'category_id'    => 'required|integer|exists:categories,id',
-        'subcategory_id' => 'nullable|integer|exists:subcategories,id',
-    ]);
+        $request->validate([
+            'category_id'    => 'required|exists:categories,id',
+            'subcategory_id' => 'nullable|exists:subcategories,id',
+        ]);
 
-    /* ---------------------------------
+        /* ---------------------------------
      | 3. Check Customer Allowed Categories
      --------------------------------- */
-    $allowedCategoryIds = json_decode($customer->category_ids, true) ?? [];
+        $allowedCategoryIds = json_decode($customer->category_ids, true) ?? [];
 
-    if (!in_array($request->category_id, $allowedCategoryIds)) {
+        if (!in_array($request->category_id, $allowedCategoryIds)) {
+            return response()->json([
+                'success' => false,
+                'code'    => 403,
+                'error'   => 'CATEGORY_NOT_ALLOWED',
+                'message' => 'You are not allowed to access this category',
+            ], 403);
+        }
+
+        /* ---------------------------------
+     | 4. Fetch Wishlist Map (IMPORTANT PART)
+     | product_id => wishlist_id
+     --------------------------------- */
+        $wishlistMap = Wishlist::where('customer_id', $customer->id)
+            ->pluck('id', 'product_id')
+            ->toArray();
+
+        /* ---------------------------------
+     | 5. Fetch Products
+     --------------------------------- */
+        $productsQuery = Product::where('category_id', $request->category_id);
+
+        if ($request->filled('subcategory_id')) {
+            $productsQuery->where('subcategory_id', $request->subcategory_id);
+        }
+
+        $products = $productsQuery
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($product) use ($wishlistMap) {
+
+                $data = $product->toArray();
+
+                $wishlistId = $wishlistMap[$product->id] ?? null;
+
+                $data['is_wishlisted'] = $wishlistId !== null;
+                $data['wishlist_id']  = $wishlistId;
+
+                return $data;
+            });
+
+        /* ---------------------------------
+     | 6. Response
+     --------------------------------- */
         return response()->json([
-            'success' => false,
-            'code'    => 403,
-            'error'   => 'CATEGORY_NOT_ALLOWED',
-            'message' => 'You are not allowed to access this category',
-        ], 403);
+            'success' => true,
+            'code'    => 200,
+            'message' => 'Products fetched successfully',
+            'data'    => $products,
+        ], 200);
     }
 
-    /* ---------------------------------
-     | 4. Fetch Products
-     --------------------------------- */
-    $productsQuery = Product::where('category_id', $request->category_id);
+    public function productDetails(Request $request, $id)
+    {
+        $product = Product::with(['category', 'subcategory'])
+            ->where('id', $id)
+            ->first();
 
-    if ($request->filled('subcategory_id')) {
-        $productsQuery->where('subcategory_id', $request->subcategory_id);
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'code'    => 404,
+                'error'   => 'PRODUCT_NOT_FOUND',
+                'message' => 'Product not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'code'    => 200,
+            'message' => 'Product details fetched successfully',
+            'data'    => [
+                'id'          => $product->id,
+                'name'        => $product->name,
+                'hole_size'       => $product->hole_size,
+                'size'       => $product->size,
+                'weight' => $product->weight,
+                'category'    => $product->category,
+                'subcategory' => $product->subcategory,
+                'images'      => $product->image_url, // accessor
+                'created_at'  => $product->created_at,
+            ]
+        ], 200);
     }
-
-    $products = $productsQuery
-        ->orderBy('id', 'desc')
-        ->get();
-
-    /* ---------------------------------
-     | 5. Response
-     --------------------------------- */
-    return response()->json([
-        'success' => true,
-        'code'    => 200,
-        'message' => 'Products fetched successfully',
-        'data'    => $products,
-    ], 200);
-}
-
 }

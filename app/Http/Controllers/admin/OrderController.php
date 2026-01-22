@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\User;
+use App\Models\Customer;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Barryvdh\DomPDF\Facade\Pdf;
 use File;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 
 class OrderController extends Controller
@@ -25,31 +26,32 @@ class OrderController extends Controller
     public function getData()
     {
         $orders = Order::query()
-            ->join('users', 'users.id', '=', 'orders.user_id')
+            ->join('customers', 'customers.id', '=', 'orders.customer_id')
             ->select([
-                'orders.id',
+                DB::raw('MIN(orders.id) as id'),          // single row id
                 'orders.order_id',
-                'users.name as user_name',
-                'orders.product_id',
-                'orders.quantity',
-                'orders.remarks',
-                'orders.weight',
-                'orders.status',
-                'orders.created_at',
+                'customers.name as user_name',
+                DB::raw('SUM(orders.quantity) as quantity'),
+                DB::raw('MAX(orders.weight) as weight'),
+                DB::raw('MAX(orders.remarks) as remarks'),
+                DB::raw('MAX(orders.status) as status'),
+                DB::raw('MAX(orders.created_at) as created_at'),
             ])
-            ->latest('orders.id');
+            ->groupBy('orders.order_id', 'customers.name')
+            ->latest('id');
 
         return DataTables::of($orders)
             ->addIndexColumn()
-            ->filterColumn('user_name', function ($query, $keyword) {
-                $query->where('users.name', 'like', "%{$keyword}%");
-            })
-            ->editColumn('status', function ($row) {
 
+            ->filterColumn('user_name', function ($query, $keyword) {
+                $query->where('customers.name', 'like', "%{$keyword}%");
+            })
+
+            ->editColumn('status', function ($row) {
                 $statuses = ['Pending', 'Approval', 'Making', 'Finishing', 'Done'];
 
                 $select = '<select class="form-select form-select-sm order-status form-control"
-                    data-id="' . $row->id . '" style="width:150px">';
+                data-id="' . $row->order_id . '" style="width:150px">';
 
                 foreach ($statuses as $status) {
                     $selected = $row->status === $status ? 'selected' : '';
@@ -62,57 +64,53 @@ class OrderController extends Controller
             })
 
             ->editColumn('remarks', function ($row) {
-                return '<span class="">' . ucfirst($row->remarks) . '</span>';
+                return $row->remarks ? ucfirst($row->remarks) : '-';
             })
+
             ->editColumn('created_at', function ($row) {
                 return Carbon::parse($row->created_at)->format('d M Y h:i A');
             })
 
-            // ✅ PRINT + PDF ONLY
             ->addColumn('action', function ($row) {
 
                 $html = '';
 
-                // 🖨 PRINT
                 if (auth()->user()->can('order-print')) {
                     $html .= '
-            <a href="' . route('admin.orders.print', $row->order_id) . '"
-               class="btn btn-success btn-sm mr-1"
-               target="_blank">
-                Print
-            </a>
-        ';
+                    <a href="' . route('admin.orders.print', $row->order_id) . '"
+                       class="btn btn-success btn-sm mr-1"
+                       target="_blank">
+                        Print
+                    </a>
+                ';
                 }
 
-                // 📄 PDF
                 if (auth()->user()->can('order-pdf')) {
                     $html .= '
-            <a href="' . route('admin.orders.pdf', $row->order_id) . '"
-               class="btn btn-danger btn-sm mr-1"
-               target="_blank">
-                PDF
-            </a>
-        ';
+                    <a href="' . route('admin.orders.pdf', $row->order_id) . '"
+                       class="btn btn-danger btn-sm mr-1"
+                       target="_blank">
+                        PDF
+                    </a>
+                ';
                 }
 
-                // 🗑 DELETE
                 if (auth()->user()->can('order-delete')) {
                     $html .= '
-            <button class="btn btn-danger btn-sm"
-                onclick="deleteOrder(' . $row->id . ')">
-                Delete
-            </button>
-        ';
+                    <button class="btn btn-danger btn-sm"
+                        onclick="deleteOrderByOrderId(\'' . $row->order_id . '\')">
+                        Delete
+                    </button>
+                ';
                 }
 
                 return $html ?: '-';
             })
-            ->rawColumns(['action'])
 
-
-            ->rawColumns(['status', 'action', 'remarks'])
+            ->rawColumns(['status', 'action'])
             ->make(true);
     }
+
 
     public function edit(Order $order)
     {
@@ -120,17 +118,30 @@ class OrderController extends Controller
     }
 
     private function invoiceData($order_id)
-    {
-        $order = Order::with(['user', 'product.category'])
-            ->where('order_id', $order_id)
-            ->firstOrFail();
+{
+    // 🔹 Fetch all products under same order_id
+    $orders = Order::with(['customer', 'product.category'])
+        ->where('order_id', $order_id)
+        ->get();
 
-        return [
-            'order_id'       => $order,
-            'data'           => collect([$order]), // 👈 keep blade loop working
-            'total_quantity' => $order->quantity,
-        ];
+    if ($orders->isEmpty()) {
+        abort(404);
     }
+
+    // 🔹 Use first row for common order info
+    $orderInfo = $orders->first();
+
+    return [
+        'order_id'       => $order_id,
+        'order'          => $orderInfo,
+        'data'           => $orders, // 👈 MULTIPLE PRODUCTS
+        'total_quantity' => $orders->sum('quantity'),
+        'total_weight'   => $orders->sum('weight'),
+        'status'         => $orderInfo->status,
+        'remarks'        => $orderInfo->remarks,
+    ];
+}
+
 
 
     public function print(Request $request, $order_id)
@@ -159,11 +170,11 @@ class OrderController extends Controller
     public function updateStatus(Request $request)
     {
         $request->validate([
-            'id'     => 'required|exists:orders,id',
+            // 'order_id'     => 'required|exists:orders,order_id',
             'status' => 'required|string',
         ]);
 
-        Order::where('id', $request->id)
+        Order::where('order_id', $request->id)
             ->update(['status' => $request->status]);
 
         return response()->json([

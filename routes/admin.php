@@ -214,6 +214,11 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::post('custom-orders/{customOrder}/status', [CustomOrderController::class, 'updateStatus'])->name('custom-orders.status');
     });
 
+    Route::middleware('permission:custom-order-delete')->group(function () {
+       Route::delete('custom-orders/{id}', [CustomOrderController::class, 'destroy'])
+                ->name('custom-orders.destroy');
+    });
+
     /*
     |--------------------------------------------------------------------------
     | BANNER ADS

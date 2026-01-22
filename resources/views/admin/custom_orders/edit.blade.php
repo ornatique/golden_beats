@@ -25,11 +25,14 @@
             <div class="form-group">
                 <label>Current Image</label><br>
 
-                <img src="{{ asset($customOrder->image) }}"
+                <img src="{{ $customOrder->image
+                                            ? asset($customOrder->image)
+                                            : asset('dist/img/no-image.png') }}"
                      class="img-thumbnail"
                      style="width:120px;height:auto;cursor:pointer"
                      data-toggle="modal"
                      data-target="#imagePreviewModal">
+
             </div>
             @endif
 

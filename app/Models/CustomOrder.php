@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
+use App\Models\Customer;
 
 class CustomOrder extends Model
 {
@@ -18,8 +18,8 @@ class CustomOrder extends Model
         'status',
     ];
 
-    public function user()
+    public function customer()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Customer::class, 'user_id', 'id');
     }
 }
