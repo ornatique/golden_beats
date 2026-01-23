@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\ReelController;
 use App\Http\Controllers\Api\QrProductController;
+use App\Http\Controllers\Api\NotificationController;
 
 // Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 //     return $request->user();
@@ -62,6 +63,8 @@ Route::get('/social-media-link', [ReelController::class, 'social_media_link']);
 Route::get('/qr-products/list', [QrProductController::class, 'index']);
 Route::post('/qr-products/save', [QrProductController::class, 'store']);
 Route::delete('/qr-products/delete', [QrProductController::class, 'destroy']);
+
+Route::get('/notifications', [NotificationController::class, 'index']);
 
 
 

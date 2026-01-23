@@ -16,7 +16,8 @@ use App\Http\Controllers\Admin\{
     ReelController,
     EventController,
     CustomerController,
-    DashboardController
+    DashboardController,
+    CustomNotificationController
 };
 
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
@@ -348,4 +349,11 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     Route::get('dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
+        Route::get('custom-notifications/data', [CustomNotificationController::class,'getData'])
+    ->name('custom-notifications.data');
+
+Route::resource('custom-notifications', CustomNotificationController::class);
 });
+
+
+
