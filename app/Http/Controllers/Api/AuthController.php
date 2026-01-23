@@ -439,8 +439,9 @@ class AuthController extends Controller
         ], 200);
     }
 
-    public function productDetails(Request $request, $id)
+    public function productDetails(Request $request)
     {
+        $id = $request->query('id');
         $product = Product::with(['category', 'subcategory'])
             ->where('id', $id)
             ->first();
@@ -469,6 +470,54 @@ class AuthController extends Controller
                 'images'      => $product->image_url, // accessor
                 'created_at'  => $product->created_at,
             ]
+        ], 200);
+    }
+
+    public function search(Request $request)
+    {
+        /* ---------------------------------
+     | 1. Get search keyword
+     --------------------------------- */
+        $keyword = trim($request->query('q'));
+
+        /* ---------------------------------
+     | 2. Base query
+     --------------------------------- */
+        $query = Product::query()
+            ->orderBy('id', 'desc');
+
+        /* ---------------------------------
+     | 3. Apply search if keyword exists
+     --------------------------------- */
+        if (!empty($keyword)) {
+            $query->where(function ($q) use ($keyword) {
+
+                // 🔹 Exact match FIRST (higher priority)
+                $q->where('name', $keyword)
+
+                    // 🔹 Partial match
+                    ->orWhere('name', 'LIKE', "%{$keyword}%");
+            });
+        }
+
+        /* ---------------------------------
+     | 4. Fetch products
+     --------------------------------- */
+        $products = $query->get()->map(function ($product) {
+            $data = $product->toArray();
+
+            // optional image accessor
+            $data['image_url'] = $product->image_url ?? null;
+
+            return $data;
+        });
+
+        return response()->json([
+            'success' => true,
+            'code'    => 200,
+            'message' => 'Products fetched successfully',
+            'count'   => $products->count(),
+            'data'    => $products,
         ], 200);
     }
 }

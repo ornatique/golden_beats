@@ -6,6 +6,9 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\EventController;
+use App\Http\Controllers\Api\ReelController;
+use App\Http\Controllers\Api\QrProductController;
 
 // Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 //     return $request->user();
@@ -29,7 +32,8 @@ Route::post(
     '/subcategories-by-category',
     [AuthController::class, 'subcategoriesByCategory']
 );
-Route::get('/product-details/{id}', [AuthController::class, 'productDetails']);
+Route::get('/product-details', [AuthController::class, 'productDetails']);
+Route::get('/products/search', [AuthController::class, 'search']);
 
 Route::post('/cart/add', [CartController::class, 'addToCart']);
 Route::get('/cart', [CartController::class, 'cartList']);
@@ -45,6 +49,24 @@ Route::get('/orders', [OrderController::class, 'orderList']);
 
 Route::post('/add-custom-orders', [OrderController::class, 'add_custom_order']);
 Route::get('/list-custom-orders', [OrderController::class, 'list_custom_order']);
+
+Route::get('/events-list', [EventController::class, 'event_list']);
+
+Route::get('/reels-list', [ReelController::class, 'index']);
+Route::get('/reels-details', [ReelController::class, 'reels_details']);
+Route::post('/reels-like', [ReelController::class, 'toggleLike']);
+Route::get('/reels-comments-list', [ReelController::class, 'comments_list']);
+Route::post('/reels/add-comment', [ReelController::class, 'addComment']);
+Route::get('/social-media-link', [ReelController::class, 'social_media_link']);
+
+Route::get('/qr-products/list', [QrProductController::class, 'index']);
+Route::post('/qr-products/save', [QrProductController::class, 'store']);
+Route::delete('/qr-products/delete', [QrProductController::class, 'destroy']);
+
+
+
+
+
 
 
 

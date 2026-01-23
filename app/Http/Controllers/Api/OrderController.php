@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Cart;
 use App\Models\CustomOrder;
+use App\Models\QrProduct;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -69,6 +70,12 @@ class OrderController extends Controller
      | 5. Clear Cart (PERMANENT)
      --------------------------------- */
         Cart::where('customer_id', $customer->id)->delete();
+
+        QrProduct::where('customer_id', $customer->id)
+        ->where('is_save', 1)
+        ->update([
+            'is_save' => 0,
+        ]);
 
         return response()->json([
             'success'  => true,
