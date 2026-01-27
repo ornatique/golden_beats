@@ -33,7 +33,7 @@ class AuthController extends Controller
             'state'        => 'required',
             'city'         => 'required',
             'image'        => 'nullable|image',
-            'category_ids' => 'required|array',
+            'company_name' => 'required'
         ]);
 
         if ($validator->fails()) {
@@ -64,11 +64,11 @@ class AuthController extends Controller
             'email'        => $request->email,
             'password'     => Hash::make($request->password),
             'number'       => $request->number,
+            'company_name' => $request->company_name,
             'state'        => $request->state,
             'city'         => $request->city,
             'image'        => $imagePath,
             'status'       => 0,
-            'category_ids' => json_encode($request->category_ids),
             'device_key' => $request->device_key,
             'fcm_token' => $request->fcm_token,
             'device_type' => $request->device_type
@@ -248,7 +248,11 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'code'    => 200,
-            'data'    => [ /* states list */],
+            'data'    => [ "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+        "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+        "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+        "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+        "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"],
         ]);
     }
 

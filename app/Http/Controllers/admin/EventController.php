@@ -29,15 +29,24 @@ class EventController extends Controller
                     return '-';
                 }
 
-                // If image is JSON / array → take first image
-                $image = is_array($e->image)
-                    ? $e->image[0]
-                    : $e->image;
+                // ✅ Decode JSON safely
+                $images = is_array($e->image)
+                    ? $e->image
+                    : json_decode($e->image, true);
 
-                return '<img src="' . asset('uploads/events/' . $image) . '"
+                if (!is_array($images) || empty($images)) {
+                    return '-';
+                }
+
+                // ✅ Take first image only
+                $firstImage = $images[0];
+
+                return '<img src="' . asset('uploads/events/' . $firstImage) . '"
                 width="60"
-                style="border-radius:4px">';
+                height="60"
+                style="border-radius:4px;object-fit:cover">';
             })
+
 
 
             ->editColumn('event_date', function ($e) {

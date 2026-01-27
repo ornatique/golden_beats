@@ -199,7 +199,7 @@ class CustomerController extends Controller
             $image->move($destinationPath, $imageName);
 
             // 🔹 Save path for DB
-            $imagePath = 'uploads/customer/' . $imageName;
+            $imagePath = $imageName;
         }
         $Customer = Customer::create([
             'name' => $request->name,
@@ -265,7 +265,7 @@ class CustomerController extends Controller
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
             $image->move($destinationPath, $imageName);
 
-            $data['image'] = 'uploads/customer/' . $imageName;
+            $data['image'] = $imageName;
         }
 
         // 🏷 Category (ONLY if customer)

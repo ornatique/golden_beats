@@ -360,6 +360,7 @@ class CustomNotificationController extends Controller
         ]);
 
         return Customer::where('city', $request->city)
+            ->where('status', 1) 
             ->select('id', 'name', 'email')
             ->orderBy('name')
             ->get();
