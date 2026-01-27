@@ -97,72 +97,106 @@
                         </div>
 
                     </div>
-              
 
-                <div class="row">
-                    <div class="col-md-6">
-                        {{-- MAP LINK --}}
-                        <div class="form-group">
-                            <label>Map Link</label>
-                            <input type="text"
-                                name="map_link"
-                                value="{{ old('map_link') }}"
-                                class="form-control @error('map_link') is-invalid @enderror">
-                            @error('map_link')
-                            <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{-- MAP LINK --}}
+                            <div class="form-group">
+                                <label>Map Link</label>
+                                <input type="text"
+                                    name="map_link"
+                                    value="{{ old('map_link') }}"
+                                    class="form-control @error('map_link') is-invalid @enderror">
+                                @error('map_link')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+
                         </div>
 
-                    </div>
+                        <div class="col-md-6">
+                            {{-- DESCRIPTION --}}
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea name="description"
+                                    class="form-control @error('description') is-invalid @enderror"
+                                    rows="4">{{ old('description') }}</textarea>
+                                @error('description')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
 
-                    <div class="col-md-6">
-                        {{-- DESCRIPTION --}}
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea name="description"
-                                class="form-control @error('description') is-invalid @enderror"
-                                rows="4">{{ old('description') }}</textarea>
-                            @error('description')
-                            <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
+
                         </div>
-
-
                     </div>
+                    {{-- IMAGE --}}
+                    <div class="form-group">
+                        <label>Event Image</label>
+                        <input type="file"
+                            id="galleryInput"
+                            name="image[]"
+                            class="form-control @error('image') is-invalid @enderror"
+                            accept="image/*"
+                            multiple
+                            onchange="previewGallery(this)">
+                        @error('image')
+                        <span class="invalid-feedback">{{ $message }}</span>
+                        @enderror
+
+                        <img id="imagePreview"
+                            style="display:none;margin-top:10px;width:120px;border:1px solid #ddd">
+                    </div>
+                    <div id="galleryPreview" class="d-flex flex-wrap mt-2"></div>
+
                 </div>
-                {{-- IMAGE --}}
-                <div class="form-group">
-                    <label>Event Image</label>
-                    <input type="file"
-                        name="image"
-                        class="form-control @error('image') is-invalid @enderror"
-                        accept="image/*"
-                        onchange="previewImage(this)">
-                    @error('image')
-                    <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
 
-                    <img id="imagePreview"
-                        style="display:none;margin-top:10px;width:120px;border:1px solid #ddd">
+                <div class="card-footer text-right">
+                    <a href="{{ route('admin.events.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+                    <button class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save
+                    </button>
                 </div>
 
+            </form>
         </div>
-
-        <div class="card-footer text-right">
-            <a href="{{ route('admin.events.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
-            <button class="btn btn-primary">
-                <i class="fas fa-save"></i> Save
-            </button>
-        </div>
-
-        </form>
-    </div>
 
     </div>
 </section>
 @endsection
+@push('styles')
+<style>
+    .gallery-item {
+        position: relative;
+        margin-right: 8px;
+        margin-bottom: 8px;
+    }
+
+    .gallery-item img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+    }
+
+    .remove-img {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        background: red;
+        color: #fff;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        text-align: center;
+        cursor: pointer;
+        font-weight: bold;
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>
@@ -176,5 +210,51 @@
             reader.readAsDataURL(input.files[0]);
         }
     }
+
+
+    let galleryFiles = new DataTransfer();
+
+    function previewGallery(input) {
+
+        if (!input.files) return;
+
+        Array.from(input.files).forEach(file => {
+
+            if (!file.type.startsWith('image/')) return;
+
+            galleryFiles.items.add(file);
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#galleryPreview').append(`
+                <div class="gallery-item" data-name="${file.name}">
+                    <span class="remove-img" onclick="removeGalleryImage('${file.name}')">&times;</span>
+                    <img src="${e.target.result}">
+                </div>
+            `);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('galleryInput').files = galleryFiles.files;
+    }
+
+    function removeGalleryImage(fileName) {
+
+        let newFiles = new DataTransfer();
+
+        Array.from(galleryFiles.files).forEach(file => {
+            if (file.name !== fileName) {
+                newFiles.items.add(file);
+            }
+        });
+
+        galleryFiles = newFiles;
+        document.getElementById('galleryInput').files = galleryFiles.files;
+
+        $(`.gallery-item[data-name="${fileName}"]`).remove();
+    }
 </script>
+
+
 @endpush

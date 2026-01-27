@@ -189,7 +189,7 @@ class OrderController extends Controller
                     'remarks'     => $order->remarks,
                     'status'      => $order->status,
                     'image_url'   => $order->image
-                        ? asset('uploads/custom_orders/' . $order->image)
+                        ? asset($order->image)
                         : null,
                     'created_at'  => $order->created_at->format('d M Y h:i A'),
                 ];

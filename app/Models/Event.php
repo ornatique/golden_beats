@@ -15,5 +15,8 @@ class Event extends Model
         'map_link',
         'event_type',
     ];
+    protected $casts = [
+        'image' => 'array',
+    ];
 }
 

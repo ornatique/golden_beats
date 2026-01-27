@@ -13,6 +13,12 @@ class EventController extends Controller
         $events = Event::orderBy('event_date', 'asc')
             ->get()
             ->map(function ($event) {
+
+                // ✅ Ensure images are always an array
+                $images = is_array($event->image)
+                    ? $event->image
+                    : (json_decode($event->image, true) ?? []);
+
                 return [
                     'id'          => $event->id,
                     'title'       => $event->title,
@@ -21,9 +27,13 @@ class EventController extends Controller
                     'event_type'  => $event->event_type,
                     'map_link'    => $event->map_link,
                     'description' => $event->description,
-                    'image_url'   => $event->image
-                        ? asset($event->image)
-                        : null,
+
+                    // ✅ MULTIPLE IMAGES
+                    'images' => collect($images)->map(
+                        fn($img) =>
+                        asset('uploads/events/' . $img)
+                    )->values(),
+
                     'created_at'  => $event->created_at->format('d M Y'),
                 ];
             });

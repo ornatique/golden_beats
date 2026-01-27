@@ -24,10 +24,21 @@ class EventController extends Controller
             ->addIndexColumn()
 
             ->addColumn('image', function ($e) {
-                return $e->image
-                    ? '<img src="' . asset($e->image) . '" width="60" style="border-radius:4px">'
-                    : '-';
+
+                if (empty($e->image)) {
+                    return '-';
+                }
+
+                // If image is JSON / array → take first image
+                $image = is_array($e->image)
+                    ? $e->image[0]
+                    : $e->image;
+
+                return '<img src="' . asset('uploads/events/' . $image) . '"
+                width="60"
+                style="border-radius:4px">';
             })
+
 
             ->editColumn('event_date', function ($e) {
                 return Carbon::parse($e->event_date)->format('d M Y h:i A');
@@ -89,30 +100,38 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
+        // 1️⃣ Validate
         $data = $request->validate([
-            'title'       => 'required|min:3',
-            'event_date'  => 'required|date',
-            'location'    => 'required',
-            'event_type'  => 'required',
-            'map_link'    => 'required|url',
-            'description' => 'required',
-            'image'       => 'required|image|mimes:jpg,jpeg,png,webp,gif'
+            'title'        => 'required|min:3',
+            'event_date'   => 'required|date',
+            'location'     => 'required',
+            'event_type'   => 'required',
+            'map_link'     => 'required|url',
+            'description'  => 'required',
+            'image'       => 'required|array',
+            'image.*'     => 'image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
+        // 2️⃣ Upload Images
+        $images = [];
+
         if ($request->hasFile('image')) {
-            $path = public_path('uploads/events');
-            if (!File::exists($path)) {
-                File::makeDirectory($path, 0755, true);
+            foreach ($request->file('image') as $image) {
+                $name = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('uploads/events'), $name);
+                $images[] = $name;
             }
-            $img = $request->image;
-            $name = time() . '_' . $img->getClientOriginalName();
-            $img->move($path, $name);
-            $data['image'] = 'uploads/events/' . $name;
         }
 
+        // 3️⃣ Save images as JSON
+        $data['image'] = json_encode($images);
+
+        // 4️⃣ Create Event
         Event::create($data);
 
-        return redirect()->route('admin.events.index')
+        // 5️⃣ Redirect
+        return redirect()
+            ->route('admin.events.index')
             ->with('success', 'Event created successfully');
     }
 
@@ -124,29 +143,61 @@ class EventController extends Controller
     public function update(Request $request, Event $event)
     {
         $data = $request->validate([
-            'title'       => 'required|min:3',
+            'title'       => 'required|string|min:3',
             'event_date'  => 'required|date',
-            'location'    => 'required',
-            'event_type'  => 'nullable',
+            'location'    => 'required|string',
+            'event_type'  => 'required|string',
             'map_link'    => 'nullable|url',
-            'description' => 'nullable',
-            'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp,gif'
+            'description' => 'nullable|string',
+            'image.*'     => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'removed_images' => 'nullable|string',
         ]);
 
+        /* -----------------------------
+         | EXISTING IMAGES
+         ----------------------------- */
+        $existingImages = $event->image ?? [];
+        $removedImages  = $request->removed_images
+            ? json_decode($request->removed_images, true)
+            : [];
+
+        /* DELETE REMOVED IMAGES */
+        foreach ($removedImages as $img) {
+            $path = public_path('uploads/events/' . $img);
+            if (File::exists($path)) {
+                File::delete($path);
+            }
+        }
+
+        /* KEEP REMAINING IMAGES */
+        $finalImages = array_values(array_diff($existingImages, $removedImages));
+
+        /* ADD NEW IMAGES */
         if ($request->hasFile('image')) {
             $path = public_path('uploads/events');
             if (!File::exists($path)) {
                 File::makeDirectory($path, 0755, true);
             }
-            $img = $request->image;
-            $name = time() . '_' . $img->getClientOriginalName();
-            $img->move($path, $name);
-            $data['image'] = 'uploads/events/' . $name;
+
+            foreach ($request->file('image') as $img) {
+                $name = time() . '_' . uniqid() . '.' . $img->extension();
+                $img->move($path, $name);
+                $finalImages[] = $name;
+            }
         }
 
-        $event->update($data);
+        $event->update([
+            'title'       => $data['title'],
+            'event_date'  => $data['event_date'],
+            'location'    => $data['location'],
+            'event_type'  => $data['event_type'],
+            'map_link'    => $data['map_link'] ?? null,
+            'description' => $data['description'] ?? null,
+            'image'      => $finalImages,
+        ]);
 
-        return redirect()->route('admin.events.index')
+        return redirect()
+            ->route('admin.events.index')
             ->with('success', 'Event updated successfully');
     }
 
