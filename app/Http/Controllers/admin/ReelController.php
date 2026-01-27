@@ -172,7 +172,7 @@ class ReelController extends Controller
             // Save relative path in DB
             $data['media_file'] = 'uploads/reels/' . $videoName;
         }
-
+        $data['story'] = $request->story;
         Reel::create($data);
 
         return redirect()
@@ -243,7 +243,7 @@ class ReelController extends Controller
             $video->move($videoPath, $videoName);
             $data['media_file'] = 'uploads/reels/' . $videoName;
         }
-
+        $data['story'] = $request->story;
         $reel->update($data);
 
         return redirect()

@@ -1,3 +1,8 @@
+$.ajaxSetup({
+    headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    }
+});
 
 let validator;
 let emailExists = false;
@@ -66,16 +71,16 @@ $(document).ready(function () {
         width: '100%'
     });
 
-    $('#stateSelect, #citySelect').on('change.select2', function () {
+    $('#stateSelect').on('change.select2', function () {
         $(this).valid();
     });
 
     const states = [
-        "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh",
-        "Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka",
-        "Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram",
-        "Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu",
-        "Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal"
+        "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+        "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+        "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+        "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+        "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
     ];
 
     states.forEach(state => {
@@ -86,9 +91,9 @@ $(document).ready(function () {
 
         let state = $(this).val();
 
-        $('#citySelect')
-            .html('<option value="">Loading...</option>')
-            .trigger('change');
+        // $('#citySelect')
+        //     .html('<option value="">Loading...</option>')
+        //     .trigger('change');
 
         if (!state) return;
 
@@ -97,14 +102,14 @@ $(document).ready(function () {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ country: "India", state })
         })
-        .then(res => res.json())
-        .then(data => {
-            $('#citySelect').html('<option value="">Select City</option>');
-            data.data.forEach(city => {
-                $('#citySelect').append(`<option value="${city}">${city}</option>`);
+            .then(res => res.json())
+            .then(data => {
+                $('#citySelect').html('<option value="">Select City</option>');
+                data.data.forEach(city => {
+                    $('#citySelect').append(`<option value="${city}">${city}</option>`);
+                });
+                $('#citySelect').trigger('change');
             });
-            $('#citySelect').trigger('change');
-        });
     });
 });
 
@@ -117,7 +122,7 @@ function previewImage(event) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
 
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             preview.src = e.target.result;
             preview.style.display = 'block';
         };

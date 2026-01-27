@@ -114,6 +114,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     });
     Route::get('get-subcategories_data/{category}', [ProductController::class, 'getSubcategories_data'])
         ->name('get.subcategories_data');
+    Route::get('/get-products/{subcategory}', [ProductController::class, 'getProductsBySubcategory'])
+        ->name('get.products');
     /*
     |--------------------------------------------------------------------------
     | SUBCATEGORIES
@@ -216,8 +218,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     });
 
     Route::middleware('permission:custom-order-delete')->group(function () {
-       Route::delete('custom-orders/{id}', [CustomOrderController::class, 'destroy'])
-                ->name('custom-orders.destroy');
+        Route::delete('custom-orders/{id}', [CustomOrderController::class, 'destroy'])
+            ->name('custom-orders.destroy');
     });
 
     /*
@@ -347,13 +349,56 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
             ->name('events.destroy');
     });
 
+    //Route::resource('custom-notifications', CustomNotificationController::class)->except(['show']);;
+    /*
+|--------------------------------------------------------------------------
+| CUSTOM NOTIFICATIONS
+|--------------------------------------------------------------------------
+*/
+
+    // 👀 VIEW
+    Route::middleware('permission:PushNotification-Create')->group(function () {
+        Route::get('custom-notifications', [CustomNotificationController::class, 'index'])
+            ->name('custom-notifications.index');
+
+        Route::get('custom-notifications/data', [CustomNotificationController::class, 'getData'])
+            ->name('custom-notifications.data');
+    });
+
+    // ➕ CREATE
+    Route::middleware('permission:PushNotification-Create')->group(function () {
+        Route::get('custom-notifications/create', [CustomNotificationController::class, 'create'])
+            ->name('custom-notifications.create');
+
+        Route::post('custom-notifications', [CustomNotificationController::class, 'store'])
+            ->name('custom-notifications.store');
+    });
+
+    // ✏️ EDIT
+    Route::middleware('permission:PushNotification-Edit')->group(function () {
+        Route::get('custom-notifications/{custom_notification}/edit', [CustomNotificationController::class, 'edit'])
+            ->name('custom-notifications.edit');
+
+        Route::put('custom-notifications/{custom_notification}', [CustomNotificationController::class, 'update'])
+            ->name('custom-notifications.update');
+    });
+
+    // ❌ DELETE
+    Route::middleware('permission:PushNotification-Delete')->group(function () {
+        Route::delete('custom-notifications/{custom_notification}', [CustomNotificationController::class, 'destroy'])
+            ->name('custom-notifications.destroy');
+    });
+
+    // 🔁 RESEND
+    Route::middleware('permission:PushNotification-Resend')->group(function () {
+        Route::post('custom-notifications/{custom_notification}/resend', [CustomNotificationController::class, 'resend'])
+            ->name('custom-notifications.resend');
+    });
+
     Route::get('dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
-        Route::get('custom-notifications/data', [CustomNotificationController::class,'getData'])
-    ->name('custom-notifications.data');
-
-Route::resource('custom-notifications', CustomNotificationController::class);
+    Route::get('custom-notifications/data', [CustomNotificationController::class, 'getData'])
+        ->name('custom-notifications.data');
+    Route::get('/customers/by-city', [CustomNotificationController::class, 'customersByCity'])
+        ->name('customers.byCity');
 });
-
-
-

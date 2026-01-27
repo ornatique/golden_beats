@@ -279,19 +279,16 @@
               </a>
             </li>
             @endcan
-            @can('event-view')
-            <li class="nav-item">
-              <a href="{{ route('admin.custom-notifications.index') }}"
-                class="nav-link {{ request()->routeIs('admin.custom-notifications.*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-calendar-alt"></i>
-                <p>Custom Notifications</p>
-              </a>
-            </li>
-            @endcan
-
           </ul>
         </li>
-
+         @can('PushNotification-Create')
+        <li class="nav-item">
+          <a href="{{ route('admin.custom-notifications.index') }}" class="nav-link {{ request()->routeIs('admin.custom-notifications.*') ? 'active' : '' }}">
+           <i class="nav-icon fas fa-bell"></i>
+            <p>Custom Notification</p>
+          </a>
+        </li>
+         @endcan
       </ul>
     </nav>
     <!-- /.sidebar-menu -->

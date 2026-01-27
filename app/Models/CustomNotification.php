@@ -13,8 +13,13 @@ class CustomNotification extends Model
         'category_id',
         'subcategory_id',
         'product_id',
+        'state',
+        'city',
         'customer_id',
     ];
+protected $casts = [
+    'customer_id' => 'array',
+];
 
     public function category() {
         return $this->belongsTo(Category::class);
@@ -28,7 +33,7 @@ class CustomNotification extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function user() {
+    public function customer() {
         return $this->belongsTo(Customer::class);
     }
 

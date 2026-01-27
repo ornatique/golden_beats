@@ -92,21 +92,21 @@ class QrProductController extends Controller
         ]);
 
         $scannedValue = trim($request->name);
-
+        
         /* ---------------------------------
      | 1. FIND PRODUCT (ID → NAME)
      --------------------------------- */
         $product = null;
 
         // 🔹 If QR contains numeric ID
-        if (is_numeric($scannedValue)) {
-            $product = Product::find($scannedValue);
-        }
+        // if (is_numeric($scannedValue)) {
+        //     $product = Product::find($scannedValue);
+        // }
 
         // 🔹 If not found, try by name
-        if (!$product) {
+        // if (!$product) {
             $product = Product::where('name', $scannedValue)->first();
-        }
+        // }
 
         /* ---------------------------------
      | 2. PREVENT DUPLICATE SAVE

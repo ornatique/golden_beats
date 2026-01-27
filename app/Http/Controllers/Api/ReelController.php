@@ -197,7 +197,7 @@ class ReelController extends Controller
         $request->validate([
             'comment' => 'required|string'
         ]);
-        $reelId = $request->query('id');
+        $reelId = $request->id;
 
         if (!$reelId) {
             return response()->json([

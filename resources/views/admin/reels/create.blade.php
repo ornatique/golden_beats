@@ -71,7 +71,22 @@
                     style="display:none;margin-top:10px;max-width:300px;border:1px solid #ddd">
                 </video>
             </div>
-
+           
+                            <div class="form-group">
+                                <label>Show as Story</label>
+                                <div class="custom-control custom-switch">
+                                  
+                                    <input type="checkbox"
+                                           name="story"
+                                           value="1"
+                                           class="custom-control-input"
+                                           id="homeSwitch">
+                                        <label class="custom-control-label" for="homeSwitch">
+                                        Yes
+                                    </label>
+                                </div>
+                            </div>
+                        
 
         </div>
 

@@ -65,32 +65,29 @@
 
 <!-- Gallery Modal -->
 <div class="modal fade" id="galleryModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content bg-dark">
-            <div class="modal-body d-flex align-items-center justify-content-center position-relative">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
 
-                <!-- Left Button -->
-                <button id="prevImg"
-                    class="slider-btn slider-left">
-                    ❮
-                </button>
-
-                <!-- Image Container -->
-                <div class="slider-image-wrapper">
-                    <img id="sliderImage" src="">
-                </div>
-
-                <!-- Right Button -->
-                <button id="nextImg"
-                    class="slider-btn slider-right">
-                    ❯
-                </button>
-
+            <div class="modal-header">
+                <h5 class="modal-title">Product Images</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
             </div>
+
+            <div class="modal-body text-center">
+                <img id="galleryModalImage"
+                    src=""
+                    class="img-fluid rounded"
+                    style="max-height:500px;">
+            </div>
+
+            <div class="modal-footer justify-content-between">
+                <button class="btn btn-secondary" id="prevImage">⬅ Prev</button>
+                <button class="btn btn-secondary" id="nextImage">Next ➡</button>
+            </div>
+
         </div>
     </div>
 </div>
-
 
 @endsection
 
@@ -231,7 +228,7 @@
             .append(`<input type="hidden" name="subcategory_id" value="${$('#subcategoryFilter').val()}">`)
             .appendTo('body')
             .submit();
-             resetSelection();
+        resetSelection();
     });
 
     /* BULK PDF WITH DETAILS */
@@ -252,7 +249,7 @@
             .append(`<input type="hidden" name="subcategory_id" value="${$('#subcategoryFilter').val()}">`)
             .appendTo('body')
             .submit();
-             resetSelection();
+        resetSelection();
     });
 
     /* PRINT QR */
@@ -270,8 +267,47 @@
         win.onload = function() {
             win.print();
         };
-         resetSelection();
+        resetSelection();
     }
+  
+
+    let galleryImages = [];
+    let currentIndex = 0;
+
+    $(document).on('click', '.gallery-thumb', function() {
+
+        galleryImages = JSON.parse($(this).attr('data-images'));
+        console.log(galleryImages)
+        currentIndex = parseInt($(this).attr('data-index'));
+
+        showGalleryImage();
+        $('#galleryModal').modal('show');
+    });
+
+    function showGalleryImage() {
+        if (!galleryImages.length) return;
+
+        let img = galleryImages[currentIndex];
+        console.log('Image file:', img);
+        $('#galleryModalImage').attr(
+            'src',
+            '{{ asset("uploads/products") }}/' + img
+        );
+    }
+
+    $('#nextImage').on('click', function() {
+        if (currentIndex < galleryImages.length - 1) {
+            currentIndex++;
+            showGalleryImage();
+        }
+    });
+
+    $('#prevImage').on('click', function() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            showGalleryImage();
+        }
+    });
 </script>
 
 @endpush

@@ -53,17 +53,25 @@ class ProductController extends Controller
             ->addColumn('subcategory', fn($p) => $p->subcategory->name ?? '-')
 
             ->addColumn('gallery', function ($p) {
-                if (!$p->gallery) return '-';
 
-                return collect($p->gallery)->map(
-                    fn($img) =>
-                    '<img src="' . asset('uploads/products/' . $img) . '"
-             class="gallery-thumb rounded mr-1"
-             style="width:50px;height:50px;cursor:pointer;object-fit:cover"
-             data-images=\'' . json_encode($p->gallery) . '\'
-             data-index="0">'
-                )->implode('');
+                if (!$p->gallery || count($p->gallery) === 0) {
+                    return '-';
+                }
+
+                $images = htmlspecialchars(json_encode($p->gallery), ENT_QUOTES, 'UTF-8');
+
+                return collect($p->gallery)->map(function ($img, $index) use ($images) {
+                    return '
+            <img src="' . asset('uploads/products/' . $img) . '"
+                 class="gallery-thumb rounded mr-1"
+                 style="width:50px;height:50px;cursor:pointer;object-fit:cover"
+                 data-images="' . $images . '"
+                 data-index="' . $index . '">
+        '; 
+                })->implode('');
             })
+
+
 
 
 
@@ -243,6 +251,11 @@ class ProductController extends Controller
     public function getSubcategories_data(Category $category)
     {
         return $category->subcategories()->pluck('name', 'id');
+    }
+    public function getProductsBySubcategory($subcategoryId)
+    {
+        return Product::where('subcategory_id', $subcategoryId)
+            ->pluck('name', 'id');
     }
     public function qrPreview(Product $product)
     {

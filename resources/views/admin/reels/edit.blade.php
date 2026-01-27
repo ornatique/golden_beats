@@ -119,6 +119,22 @@
                 </video>
             </div>
 
+            <div class="form-group">
+                <label>Show as Story</label>
+                <div class="custom-control custom-switch">
+
+                    <input type="checkbox"
+                                        name="story"
+                                        value="1"
+                                        class="custom-control-input"
+                                        id="homeSwitch"
+                                        {{ old('story', $reel->story) ? 'checked' : '' }}>
+                       <label class="custom-control-label" for="homeSwitch">
+                                        Yes
+                                    </label>
+                </div>
+            </div>
+
         </div>
 
         <div class="card-footer text-right">

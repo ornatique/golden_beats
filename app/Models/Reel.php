@@ -8,7 +8,7 @@ class Reel extends Model
 {
     protected $fillable = [
         'name','description','image','media_file',
-        'category_id','subcategory_id'
+        'category_id','subcategory_id','story'
     ];
 
     public function likes()

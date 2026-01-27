@@ -5,7 +5,7 @@
     <div class="card-header">
         <h3>Custom Notifications</h3>
 
-        @can('Push-Notification-create')
+        @can('PushNotification-Create')
         <a href="{{ route('admin.custom-notifications.create') }}"
            class="btn btn-primary mb-2 float-right">
             + Add Custom Notification
@@ -19,9 +19,9 @@
                 <tr>
                     <th>#</th>
                     <th>Title</th>
+                    <th>Description</th>
                     <th>Category</th>
                     <th>Subcategory</th>
-                    <th>User</th>
                     <th>Image</th>
                     <th>Action</th>
                 </tr>
@@ -29,10 +29,45 @@
         </table>
     </div>
 </div>
+<!-- Image Preview Modal -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Image Preview</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="previewImage"
+                     src=""
+                     class="img-fluid rounded">
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
 <script>
+    function openImageModal(imageUrl) {
+    $('#previewImage').attr('src', imageUrl);
+    $('#imagePreviewModal').modal('show');
+}
+function resendnotification(id) {
+    if (!confirm('Resend this notification?')) return;
+
+    $.post(
+        "{{ route('admin.custom-notifications.resend', ':id') }}".replace(':id', id),
+        { _token: '{{ csrf_token() }}' },
+        function (res) {
+            alert(res.message);
+        }
+    );
+}
+
 $(function () {
 
     $('#notificationTable').DataTable({
@@ -47,10 +82,11 @@ $(function () {
                 orderable: false,
                 searchable: false
             },
+            { data: 'description', name: 'description' },
             { data: 'title', name: 'title' },
             { data: 'category', name: 'category.name' },
             { data: 'subcategory', name: 'subcategory.name' },
-            { data: 'user', name: 'user.name' },
+            
             {
                 data: 'image',
                 name: 'image',

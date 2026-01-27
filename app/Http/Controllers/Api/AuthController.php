@@ -195,9 +195,22 @@ class AuthController extends Controller
     /* =====================================================
      | LOGOUT
      ===================================================== */
+
+
     public function logout(Request $request)
     {
-        $accessToken = PersonalAccessToken::findToken($request->bearerToken());
+        $token = $request->bearerToken();
+
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'code'    => 401,
+                'error'   => 'NO_TOKEN',
+                'message' => 'Bearer token missing',
+            ], 401);
+        }
+
+        $accessToken = PersonalAccessToken::findToken($token);
 
         if (!$accessToken) {
             return response()->json([
@@ -208,6 +221,15 @@ class AuthController extends Controller
             ], 401);
         }
 
+        // ✅ GET LOGGED-IN USER
+        $user = $accessToken->tokenable;
+
+        // ✅ REMOVE DEVICE / FCM TOKEN
+        $user->update([
+            'device_key' => null, // or device_key
+        ]);
+
+        // ✅ DELETE ACCESS TOKEN
         $accessToken->delete();
 
         return response()->json([
@@ -216,6 +238,7 @@ class AuthController extends Controller
             'message' => 'Logout successful',
         ]);
     }
+
 
     /* =====================================================
      | STATES & CITIES
@@ -287,9 +310,16 @@ class AuthController extends Controller
             ], 401);
         }
 
-        /** @var \App\Models\Customer $customer */
         $customer = $accessToken->tokenable;
+        if ($request->filled('fcm_token')) {
 
+            // Update only if changed (optional optimization)
+            if ($customer->fcm_token !== $request->fcm_token) {
+                $customer->update([
+                    'fcm_token' => $request->fcm_token,
+                ]);
+            }
+        }
         /* ---------------------------------
      | 2. Fetch Categories from category_ids
      --------------------------------- */
