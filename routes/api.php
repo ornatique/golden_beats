@@ -47,6 +47,8 @@ Route::get('/wishlist/remove', [WishlistController::class, 'remove']);
 
 Route::post('/order/place', [OrderController::class, 'placeOrder']);
 Route::get('/orders', [OrderController::class, 'orderList']);
+Route::get('/orders/details', [OrderController::class, 'orderDetails']);
+
 
 Route::post('/add-custom-orders', [OrderController::class, 'add_custom_order']);
 Route::get('/list-custom-orders', [OrderController::class, 'list_custom_order']);

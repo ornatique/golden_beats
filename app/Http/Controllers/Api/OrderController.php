@@ -72,10 +72,10 @@ class OrderController extends Controller
         Cart::where('customer_id', $customer->id)->delete();
 
         QrProduct::where('customer_id', $customer->id)
-        ->where('is_save', 1)
-        ->update([
-            'is_save' => 0,
-        ]);
+            ->where('is_save', 1)
+            ->update([
+                'is_save' => 0,
+            ]);
 
         return response()->json([
             'success'  => true,
@@ -88,12 +88,58 @@ class OrderController extends Controller
     public function orderList(Request $request)
     {
         $accessToken = PersonalAccessToken::findToken($request->bearerToken());
+
+        if (!$accessToken || !($accessToken->tokenable instanceof \App\Models\Customer)) {
+            return response()->json([
+                'success' => false,
+                'code'    => 401,
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
         $customer = $accessToken->tokenable;
 
-        $orders = Order::with('product')
-            ->where('customer_id', $customer->id)
-            ->orderBy('id', 'desc')
-            ->get();
+        $orders = Order::where('customer_id', $customer->id)
+            ->select('order_id', 'status', 'remarks', 'created_at')
+            ->groupBy('order_id', 'status', 'remarks', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($order) {
+
+                $items = Order::with('product')
+                    ->where('order_id', $order->order_id)
+                    ->get();
+
+                $firstProduct = $items->first()?->product;
+
+                $image = null;
+
+                if ($firstProduct) {
+
+                    // ✅ HANDLE GALLERY (JSON or ARRAY)
+                    if (is_array($firstProduct->gallery)) {
+                        $image = asset('uploads/products/' . $firstProduct->gallery[0]);
+                    } elseif (is_string($firstProduct->gallery)) {
+                        $decoded = json_decode($firstProduct->gallery, true);
+                        if (is_array($decoded) && count($decoded)) {
+                            $image = asset('uploads/products/' . $decoded[0]);
+                        }
+                    } elseif (!empty($firstProduct->image)) {
+                        $image = asset('uploads/products/' . $firstProduct->image);
+                    }
+                }
+
+                return [
+                    'order_id'       => $order->order_id,
+                    'status'         => $order->status,
+                    'remarks'        => $order->remarks,
+                    'total_quantity' => $items->sum('quantity'),
+                    'total_weight'   => $items->sum('weight'),
+                    'total_products' => $items->count(),
+                    'image_url'      => $image, // ✅ IMAGE ADDED
+                    'order_date'     => $order->created_at->format('d M Y h:m a'),
+                ];
+            });
 
         return response()->json([
             'success' => true,
@@ -102,6 +148,86 @@ class OrderController extends Controller
             'data'    => $orders,
         ]);
     }
+
+
+
+    public function orderDetails(Request $request)
+    {
+        $accessToken = PersonalAccessToken::findToken($request->bearerToken());
+
+        if (!$accessToken) {
+            return response()->json([
+                'success' => false,
+                'code'    => 401,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        $customer = $accessToken->tokenable;
+
+        $orders = Order::with(['product.category'])
+            ->where('order_id', $request->order_id)
+            ->where('customer_id', $customer->id)
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'code'    => 404,
+                'message' => 'Order not found'
+            ], 404);
+        }
+
+        $orderInfo = $orders->first();
+
+        return response()->json([
+            'success' => true,
+            'code'    => 200,
+            'message' => 'Order details fetched successfully',
+            'data'    => [
+                'order_id'       => $request->order_id,
+                'status'         => $orderInfo->status,
+                'remarks'        => $orderInfo->remarks,
+                'total_quantity' => $orders->sum('quantity'),
+                'total_weight'   => $orders->sum('weight'),
+
+                'products' => $orders->map(function ($order) {
+
+                    $product = $order->product;
+
+                    // ✅ HANDLE SINGLE / MULTIPLE IMAGES SAFELY
+                    $images = [];
+
+                    if (!empty($product->gallery)) {
+                        // JSON images
+                        $decoded = is_array($product->gallery)
+                            ? $product->gallery
+                            : json_decode($product->gallery, true);
+
+                        $images = collect($decoded)->map(
+                            fn($img) => asset('uploads/products/' . $img)
+                        )->values();
+                    } elseif (!empty($product->image)) {
+                        // Single image
+                        $images[] = asset('uploads/products/' . $product->gallery);
+                    }
+
+                    return [
+                        'product_id' => $product->id,
+                        'name'       => $product->name,
+                        'category'   => $product->category->name ?? null,
+                        'quantity'   => $order->quantity,
+                        'weight'     => $order->weight,
+
+                        // ✅ NEW
+                        'images'     => $images,
+                    ];
+                }),
+            ]
+        ]);
+    }
+
+
 
     public function add_custom_order(Request $request)
     {
@@ -144,7 +270,7 @@ class OrderController extends Controller
             $imageName  = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
             $image->move($destination, $imageName);
 
-            $imagePath = 'uploads/custom_orders/' .$imageName;
+            $imagePath = 'uploads/custom_orders/' . $imageName;
         }
 
         /* ---------------------------------

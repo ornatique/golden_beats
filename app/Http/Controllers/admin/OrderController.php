@@ -118,29 +118,29 @@ class OrderController extends Controller
     }
 
     private function invoiceData($order_id)
-{
-    // 🔹 Fetch all products under same order_id
-    $orders = Order::with(['customer', 'product.category'])
-        ->where('order_id', $order_id)
-        ->get();
+    {
+        // 🔹 Fetch all products under same order_id
+        $orders = Order::with(['customer', 'product.category'])
+            ->where('order_id', $order_id)
+            ->get();
 
-    if ($orders->isEmpty()) {
-        abort(404);
+        if ($orders->isEmpty()) {
+            abort(404);
+        }
+
+        // 🔹 Use first row for common order info
+        $orderInfo = $orders->first();
+
+        return [
+            'order_id'       => $order_id,
+            'order'          => $orderInfo,
+            'data'           => $orders, // 👈 MULTIPLE PRODUCTS
+            'total_quantity' => $orders->sum('quantity'),
+            'total_weight'   => $orders->sum('weight'),
+            'status'         => $orderInfo->status,
+            'remarks'        => $orderInfo->remarks,
+        ];
     }
-
-    // 🔹 Use first row for common order info
-    $orderInfo = $orders->first();
-
-    return [
-        'order_id'       => $order_id,
-        'order'          => $orderInfo,
-        'data'           => $orders, // 👈 MULTIPLE PRODUCTS
-        'total_quantity' => $orders->sum('quantity'),
-        'total_weight'   => $orders->sum('weight'),
-        'status'         => $orderInfo->status,
-        'remarks'        => $orderInfo->remarks,
-    ];
-}
 
 
 
