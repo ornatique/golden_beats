@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Notification;
-use Illuminate\Support\Facades\Http;
+use Kreait\Firebase\Factory;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification as FirebaseNotification;
 
 class NotificationService
 {
@@ -14,17 +16,20 @@ class NotificationService
         int $customerId,
         string $title,
         string $message,
-        string $type = null,
-        int $referenceId = null,
-        string $fcmToken = null,
-        string $imageUrl = null,
-        string $categoryId = null,
-        string $subcategoryId = null,
-        string $productId = null
-    ) {
+        ?string $type = null,
+        ?int $referenceId = null,
+        ?string $fcmToken = null,
+        ?string $imageUrl = null,
+        ?int $categoryId = null,
+        ?int $subcategoryId = null,
+        ?int $productId = null
+    ): void {
         /* -----------------------------
          | 1️⃣ Save Notification in DB
          ----------------------------- */
+    $categoryId    = $categoryId !== null ? (int) $categoryId : null;
+    $subcategoryId = $subcategoryId !== null ? (int) $subcategoryId : null;
+    $productId     = $productId !== null ? (int) $productId : null;
         Notification::create([
             'customer_id'  => $customerId,
             'title'        => $title,
@@ -50,55 +55,38 @@ class NotificationService
     }
 
     /**
-     * Firebase Push Notification
+     * Firebase Push (FCM v1)
      */
-    private static function sendFirebase(
-        string $token,
-        string $title,
-        string $message,
-        string $imageUrl = null,
-        int $categoryId = null,
-        string $subcategoryId = null,
-        string $productId = null
-    ) {
-        $payload = [
-            'to' => $token,
+private static function sendFirebase(
+    string $token,
+    string $title,
+    string $message,
+    ?string $imageUrl = null,
+    ?int $categoryId = null,
+    ?int $subcategoryId = null,
+    ?int $productId = null
+): void {
+    $factory = (new Factory)
+        ->withServiceAccount(config('firebase.credentials'));
 
-            // 🔔 Notification payload (visible)
-            'notification' => [
-                'title' => $title,
-                'body'  => $message,
-                'category_id'   => $categoryId,
-                'subcategory_id'=> $subcategoryId,
-                'product_id'    => $productId,
-                'type'          => 'custom_notification',
-            ],
+    $messaging = $factory->createMessaging();
 
-            // 📦 Data payload (Flutter handling)
-            'data' => [
-                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
-                'image'         => $imageUrl,
-                'category_id'   => $categoryId,
-                'subcategory_id'=> $subcategoryId,
-                'product_id'    => $productId,
-                'type'          => 'custom_notification',
-            ],
-        ];
+    // 📦 DATA-ONLY payload (Flutter friendly)
+    $cloudMessage = CloudMessage::fromArray([
+        'token' => $token,
+        'data' => array_filter([
+            'title'          => $title,
+            'body'           => $message,
+            'image'          => $imageUrl,
+            'category_id'    => (string) $categoryId,
+            'subcategory_id' => (string) $subcategoryId,
+            'product_id'     => (string) $productId,
+            'type'           => 'custom_notification',
+            'click_action'   => 'FLUTTER_NOTIFICATION_CLICK',
+        ]),
+    ]);
 
-        /* -----------------------------
-         | ✅ IMAGE SUPPORT
-         ----------------------------- */
-        if ($imageUrl) {
-            $payload['notification']['image'] = $imageUrl;
-            $payload['data']['image'] = $imageUrl; // Flutter background fix
-        }
-
-        Http::withHeaders([
-            'Authorization' => 'key=' . env('FIREBASE_SERVER_KEY'),
-            'Content-Type'  => 'application/json',
-        ])->post(
-            'https://fcm.googleapis.com/fcm/send',
-            $payload
-        );
-    }
+    // 🚀 Send
+    $messaging->send($cloudMessage);
+}
 }
