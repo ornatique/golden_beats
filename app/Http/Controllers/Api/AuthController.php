@@ -248,11 +248,36 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'code'    => 200,
-            'data'    => [ "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-        "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-        "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
-        "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
-        "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"],
+            'data'    => [
+                "Andhra Pradesh",
+                "Arunachal Pradesh",
+                "Assam",
+                "Bihar",
+                "Chhattisgarh",
+                "Goa",
+                "Gujarat",
+                "Haryana",
+                "Himachal Pradesh",
+                "Jharkhand",
+                "Karnataka",
+                "Kerala",
+                "Madhya Pradesh",
+                "Maharashtra",
+                "Manipur",
+                "Meghalaya",
+                "Mizoram",
+                "Nagaland",
+                "Odisha",
+                "Punjab",
+                "Rajasthan",
+                "Sikkim",
+                "Tamil Nadu",
+                "Telangana",
+                "Tripura",
+                "Uttar Pradesh",
+                "Uttarakhand",
+                "West Bengal"
+            ],
         ]);
     }
 
@@ -552,6 +577,106 @@ class AuthController extends Controller
             'message' => 'Products fetched successfully',
             'count'   => $products->count(),
             'data'    => $products,
+        ], 200);
+    }
+
+    public function dashboardSearch(Request $request)
+    {
+        $keyword = trim($request->query('q'));
+
+        if (empty($keyword)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Keyword required',
+                'data' => []
+            ], 400);
+        }
+
+        /* ---------------------------------
+     | 1. Search Categories FIRST
+     --------------------------------- */
+        $categories = Category::where('name', 'LIKE', "%{$keyword}%")
+            ->orderBy('name')
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'type' => 'category',
+                    'image_url' => $category->image_url ?? null,
+                ];
+            });
+
+        /* ---------------------------------
+     | 2. Search SubCategories SECOND
+     --------------------------------- */
+        $subCategories = SubCategory::with('category')
+            ->where('name', 'LIKE', "%{$keyword}%")
+            ->orderBy('name')
+            ->get()
+            ->map(function ($sub) {
+                return [
+                    'id' => $sub->id,
+                    'name' => $sub->name,
+                    'category_id' => $sub->category_id,
+                    'category_name' => $sub->category->name ?? null,
+                    'type' => 'sub_category',
+                    'image_url' => $sub->image_url ?? null,
+                ];
+            });
+
+        /* ---------------------------------
+     | 3. Search Products LAST
+     --------------------------------- */
+        $products = Product::with(['category', 'subCategory'])
+            ->where(function ($query) use ($keyword) {
+
+                // search in product name
+                $query->where('name', 'LIKE', "%{$keyword}%")
+
+                    // search in category name
+                    ->orWhereHas('category', function ($q) use ($keyword) {
+                        $q->where('name', 'LIKE', "%{$keyword}%");
+                    })
+
+                    // search in subcategory name
+                    ->orWhereHas('subCategory', function ($q) use ($keyword) {
+                        $q->where('name', 'LIKE', "%{$keyword}%");
+                    });
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'category_id' => $product->category_id,
+                    'category_name' => $product->category->name ?? null,
+                    'sub_category_id' => $product->sub_category_id,
+                    'sub_category_name' => $product->subCategory->name ?? null,
+                    'image_url' => $product->image_url ?? null,
+                    'type' => 'product'
+                ];
+            });
+
+
+        /* ---------------------------------
+     | 4. Merge in required order
+     --------------------------------- */
+        $results = collect()
+            ->merge($categories)
+            ->merge($subCategories)
+            ->merge($products)
+            ->values();
+
+        /* ---------------------------------
+     | 5. Return response
+     --------------------------------- */
+        return response()->json([
+            'success' => true,
+            'message' => 'Search results',
+            'count' => $results->count(),
+            'data' => $results
         ], 200);
     }
 }

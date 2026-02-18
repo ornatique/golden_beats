@@ -395,6 +395,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
             ->name('custom-notifications.resend');
     });
 
+    Route::post('/custom-notifications/delete-by-type', [CustomNotificationController::class, 'deleteByType'])
+        ->name('custom-notifications.delete-by-type');
+
+
     Route::get('dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
     Route::get('custom-notifications/data', [CustomNotificationController::class, 'getData'])

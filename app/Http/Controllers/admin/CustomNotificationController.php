@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Yajra\DataTables\Facades\DataTables;
 use App\Services\NotificationService;
+use App\Models\Notification;
 use Illuminate\Support\Facades\Log;
 
 class CustomNotificationController extends Controller
@@ -168,18 +169,17 @@ class CustomNotificationController extends Controller
 
         foreach ($customers as $customer) {
             NotificationService::send(
-                    (int) $customer->id,                     // 1 customerId
-                    $customNotification->title,              // 2 title
-                    $customNotification->description,        // 3 message
-                    'custom_notification',                   // 4 type
-                    (int) $customNotification->id,            // 5 referenceId
-                    $customer->fcm_token,                    // 6 fcmToken
-                    $imageUrl,                               // 7 imageUrl ✅
-                    $request->category_id ? (int) $request->category_id : null,      // 8 categoryId
-                    $request->subcategory_id ? (int) $request->subcategory_id : null,// 9 subcategoryId
-                    $request->product_id ? (int) $request->product_id : null         // 10 productId ✅
-                );
-            
+                (int) $customer->id,                     // 1 customerId
+                $customNotification->title,              // 2 title
+                $customNotification->description,        // 3 message
+                'custom_notification',                   // 4 type
+                (int) $customNotification->id,            // 5 referenceId
+                $customer->fcm_token,                    // 6 fcmToken
+                $imageUrl,                               // 7 imageUrl ✅
+                $request->category_id ? (int) $request->category_id : null,      // 8 categoryId
+                $request->subcategory_id ? (int) $request->subcategory_id : null, // 9 subcategoryId
+                $request->product_id ? (int) $request->product_id : null         // 10 productId ✅
+            );
         }
 
         return redirect()
@@ -213,9 +213,9 @@ class CustomNotificationController extends Controller
             'notification_id' => $id,
             'request' => $request->all(),
         ]);
-    
+
         $notification = CustomNotification::findOrFail($id);
-    
+
         /* ---------------------------------
          | 1. Validate
          --------------------------------- */
@@ -230,7 +230,7 @@ class CustomNotificationController extends Controller
             'state'          => 'required|string',
             'city'           => 'required|string',
         ]);
-    
+
         /* ---------------------------------
          | 2. Image Update
          --------------------------------- */
@@ -238,31 +238,31 @@ class CustomNotificationController extends Controller
             Log::info('🖼 Image upload detected', [
                 'notification_id' => $notification->id,
             ]);
-    
+
             $oldPath = public_path('uploads/custom_notifications/' . $notification->image);
-    
+
             if ($notification->image && File::exists($oldPath)) {
                 File::delete($oldPath);
                 Log::info('🗑 Old image deleted', ['path' => $oldPath]);
             }
-    
+
             $imageName = time() . '_' . $request->image->getClientOriginalName();
             $request->image->move(
                 public_path('uploads/custom_notifications'),
                 $imageName
             );
-    
+
             $notification->image = $imageName;
-    
+
             Log::info('✅ New image uploaded', [
                 'image' => $imageName,
             ]);
         }
-    
+
         $imageUrl = $notification->image
             ? asset('uploads/custom_notifications/' . $notification->image)
             : null;
-    
+
         /* ---------------------------------
          | 3. Update Notification Record
          --------------------------------- */
@@ -276,34 +276,34 @@ class CustomNotificationController extends Controller
             'city'           => $request->city,
             'customer_id'    => json_encode($request->customer_id),
         ]);
-    
+
         Log::info('✅ Notification record updated', [
             'notification_id' => $notification->id,
         ]);
-    
+
         /* ---------------------------------
          | 4. 🔔 RESEND NOTIFICATION
          --------------------------------- */
         $customers = Customer::whereIn('id', $request->customer_id)->get();
-    
+
         Log::info('📤 Sending notifications', [
             'total_customers' => $customers->count(),
         ]);
-    
+
         foreach ($customers as $customer) {
-    
+
             if (!$customer->fcm_token) {
                 Log::warning('⚠️ FCM token missing', [
                     'customer_id' => $customer->id,
                 ]);
                 continue;
             }
-    
+
             Log::info('➡️ Sending FCM notification', [
                 'customer_id' => $customer->id,
                 'token'       => substr($customer->fcm_token, 0, 15) . '***',
             ]);
-    
+
             try {
                 NotificationService::send(
                     (int) $customer->id,
@@ -317,11 +317,10 @@ class CustomNotificationController extends Controller
                     (int) $request->subcategory_id,
                     (int) $request->product_id
                 );
-    
+
                 Log::info('✅ Notification sent successfully', [
                     'customer_id' => $customer->id,
                 ]);
-    
             } catch (\Throwable $e) {
                 Log::error('❌ Notification send failed', [
                     'customer_id' => $customer->id,
@@ -329,14 +328,14 @@ class CustomNotificationController extends Controller
                 ]);
             }
         }
-    
+
         /* ---------------------------------
          | 5. Redirect
          --------------------------------- */
         Log::info('🎉 CustomNotification update completed', [
             'notification_id' => $notification->id,
         ]);
-    
+
         return redirect()
             ->route('admin.custom-notifications.index')
             ->with('success', 'Custom notification updated & resent successfully');
@@ -419,7 +418,7 @@ class CustomNotificationController extends Controller
         ]);
 
         return Customer::where('city', $request->city)
-            ->where('status', 1) 
+            ->where('status', 1)
             ->select('id', 'name', 'email')
             ->orderBy('name')
             ->get();
@@ -445,22 +444,36 @@ class CustomNotificationController extends Controller
 
         foreach ($customers as $customer) {
             NotificationService::send(
-            (int) $customer->id,
-            (string) $custom_notification->title,
-            (string) $custom_notification->description,
-            'custom_notification',
-            (int) $custom_notification->id, // ✅ CAST TO INT (IMPORTANT)
-            (string) $customer->fcm_token,
-            $imageUrl,
-            (int) $custom_notification->category_id,
-            (int) $custom_notification->subcategory_id,
-            (int) $custom_notification->product_id
-        );
+                (int) $customer->id,
+                (string) $custom_notification->title,
+                (string) $custom_notification->description,
+                'custom_notification',
+                (int) $custom_notification->id, // ✅ CAST TO INT (IMPORTANT)
+                (string) $customer->fcm_token,
+                $imageUrl,
+                (int) $custom_notification->category_id,
+                (int) $custom_notification->subcategory_id,
+                (int) $custom_notification->product_id
+            );
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Notification resent successfully'
+        ]);
+    }
+
+    public function deleteByType(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|in:order,custom_notification'
+        ]);
+
+        $count = Notification::where('type', $request->type)->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => $count . ' notifications deleted successfully'
         ]);
     }
 }

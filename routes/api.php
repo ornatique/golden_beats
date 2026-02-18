@@ -35,6 +35,7 @@ Route::post(
 );
 Route::get('/product-details', [AuthController::class, 'productDetails']);
 Route::get('/products/search', [AuthController::class, 'search']);
+Route::get('/dashboard-search', [AuthController::class, 'dashboardSearch']);
 
 Route::post('/cart/add', [CartController::class, 'addToCart']);
 Route::get('/cart-list', [CartController::class, 'cartList']);
